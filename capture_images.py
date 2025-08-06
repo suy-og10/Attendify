@@ -3,19 +3,23 @@ import os
 import time
 import json
 
-def capture_images(person_name, roll_number, output_dir='dataset', capture_interval=2, total_images=10):
+def capture_images(person_name, PRN, output_dir='dataset', capture_interval=2, total_images=10):
     """
     Captures images from the webcam automatically at specified intervals and saves them in a structured directory.
 
     Args:
         person_name (str): The name of the person whose face is being captured.
-        roll_number (str): The roll number of the person.
+        PRN (str): The PRN (Permanent Registration Number) of the person (10 digits).
         output_dir (str): The parent directory to store the dataset.
         capture_interval (int): Time interval between captures in seconds (default: 2).
         total_images (int): Total number of images to capture (default: 10).
     """
-    # Create the directory for the person's images using name and roll number
-    person_folder_name = f"{person_name}_{roll_number}"
+    # Extract last 4 digits of PRN for folder naming
+    # Assuming PRN is always 10 digits as specified
+    prn_suffix = PRN[-4:]
+    
+    # Create the directory for the person's images using name and last 4 digits of PRN
+    person_folder_name = f"{person_name}_{prn_suffix}"
     person_dir = os.path.join(output_dir, person_folder_name)
     if not os.path.exists(person_dir):
         os.makedirs(person_dir)
@@ -27,7 +31,7 @@ def capture_images(person_name, roll_number, output_dir='dataset', capture_inter
     info_file = os.path.join(person_dir, 'person_info.json')
     person_info = {
         'name': person_name,
-        'roll_number': roll_number,
+        'PRN': PRN, # Storing full PRN in info file
         'capture_date': time.strftime('%Y-%m-%d %H:%M:%S'),
         'total_images': total_images
     }
@@ -44,12 +48,12 @@ def capture_images(person_name, roll_number, output_dir='dataset', capture_inter
         return
 
     # Create a window to display the webcam feed
-    window_name = f"Capturing Images for {person_name} (Roll: {roll_number})"
+    window_name = f"Capturing Images for {person_name} (PRN: {PRN})"
     cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
     
     image_count = 0
     print(f"\nStarting automatic image capture...")
-    print(f"Person: {person_name} | Roll Number: {roll_number}")
+    print(f"Person: {person_name} | PRN: {PRN}")
     print(f"Capturing {total_images} images with {capture_interval} second intervals")
     print(f"Press 'q' to quit early\n")
     
@@ -75,15 +79,16 @@ def capture_images(person_name, roll_number, output_dir='dataset', capture_inter
         # Display the live frame with capture info
         display_frame = frame.copy()
         cv2.putText(display_frame, f"Images: {image_count}/{total_images}", (10, 30), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
         cv2.putText(display_frame, f"Next capture in: {max(0, int(next_capture_time - time.time()))}s", 
-                   (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
+                    (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
         cv2.imshow(window_name, display_frame)
 
         # Check if it's time to capture an image
         current_time = time.time()
         if current_time >= next_capture_time:
-            image_filename = os.path.join(person_dir, f"{person_name}_{roll_number}_image_{image_count:03d}.jpg")
+            # Use full PRN in image filename for uniqueness and traceability
+            image_filename = os.path.join(person_dir, f"{person_name}_{PRN}_image_{image_count:03d}.jpg")
             cv2.imwrite(image_filename, frame)
             print(f"Image {image_count + 1}/{total_images} saved: {image_filename}")
             image_count += 1
@@ -104,10 +109,10 @@ def capture_images(person_name, roll_number, output_dir='dataset', capture_inter
 
 def get_user_input():
     """
-    Get user name and roll number from input.
+    Get user name and PRN from input.
     
     Returns:
-        tuple: (name, roll_number) or (None, None) if user wants to quit
+        tuple: (name, PRN) or (None, None) if user wants to quit
     """
     print("\n" + "="*50)
     print("FACE DATASET COLLECTION SYSTEM")
@@ -125,19 +130,19 @@ def get_user_input():
         # Replace spaces with underscores for folder naming
         name = name.replace(" ", "_")
         
-        roll_number = input("Enter roll number: ").strip()
-        if not roll_number:
-            print("Roll number cannot be empty. Please try again.")
+        PRN = input("Enter 10-digit PRN: ").strip()
+        if not PRN.isdigit() or len(PRN) != 10:
+            print("PRN must be a 10-digit number. Please try again.")
             continue
             
         # Confirm the details
         print(f"\nConfirm details:")
         print(f"Name: {name}")
-        print(f"Roll Number: {roll_number}")
+        print(f"PRN: {PRN}")
         confirm = input("Is this correct? (y/n): ").strip().lower()
         
         if confirm in ['y', 'yes']:
-            return name, roll_number
+            return name, PRN
         else:
             print("Let's try again...")
 
@@ -188,7 +193,7 @@ if __name__ == "__main__":
     
     while True:
         # Get user input
-        name, roll_number = get_user_input()
+        name, PRN = get_user_input()
         
         if name is None:  # User wants to quit
             print("\nThank you for using the Face Dataset Collection System!")
@@ -201,7 +206,7 @@ if __name__ == "__main__":
         
         try:
             # Start image capture
-            capture_images(name, roll_number, capture_interval=capture_interval, total_images=total_images)
+            capture_images(name, PRN, capture_interval=capture_interval, total_images=total_images)
         except KeyboardInterrupt:
             print("\nCapture interrupted by user.")
         except Exception as e:
