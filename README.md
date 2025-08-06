@@ -21,7 +21,7 @@ A face dataset collection system for building an attendance management system us
 1. Clone the repository:
 ```bash
 git clone https://github.com/suy-og10/Attendance_Management_System
-cd AMS
+cd Attendance_Management_System
 ```
 
 2. Create and activate virtual environment:
