@@ -146,67 +146,39 @@ def get_user_input():
         else:
             print("Let's try again...")
 
-def get_capture_settings():
-    """
-    Get capture settings from user.
-    
-    Returns:
-        tuple: (capture_interval, total_images)
-    """
-    print("\nCapture Settings:")
-    
-    # Get capture interval
-    while True:
-        try:
-            interval = input("Enter time interval between captures in seconds (default: 2): ").strip()
-            if not interval:
-                interval = 2
-            else:
-                interval = float(interval)
-            if interval <= 0:
-                print("Interval must be positive. Please try again.")
-                continue
-            break
-        except ValueError:
-            print("Please enter a valid number.")
-    
-    # Get total images
-    while True:
-        try:
-            total = input("Enter total number of images to capture (default: 10): ").strip()
-            if not total:
-                total = 10
-            else:
-                total = int(total)
-            if total <= 0:
-                print("Number of images must be positive. Please try again.")
-                continue
-            break
-        except ValueError:
-            print("Please enter a valid number.")
-    
-    return interval, total
+
 
 # --- How to use the function ---
 if __name__ == "__main__":
     print("Welcome to the Face Dataset Collection System!")
+    print("Quick Capture Mode: 150 images with 0.5 second intervals")
+    
+    # Default settings for quick capture
+    CAPTURE_INTERVAL = 0.5  # 0.5 seconds for quick capture
+    TOTAL_IMAGES = 150      # 150 images as requested
     
     while True:
+
         # Get user input
         name, PRN = get_user_input()
+
+        # Get user input (only name and roll number)
+        name, roll_number = get_user_input()
         
         if name is None:  # User wants to quit
             print("\nThank you for using the Face Dataset Collection System!")
             break
         
-        # Get capture settings
-        capture_interval, total_images = get_capture_settings()
-        
-        print(f"\nPreparing to capture {total_images} images with {capture_interval} second intervals...")
+        print(f"\nPreparing to capture {TOTAL_IMAGES} images with {CAPTURE_INTERVAL} second intervals...")
         
         try:
+
             # Start image capture
             capture_images(name, PRN, capture_interval=capture_interval, total_images=total_images)
+
+            # Start image capture with default settings
+            capture_images(name, roll_number, capture_interval=CAPTURE_INTERVAL, total_images=TOTAL_IMAGES)
+
         except KeyboardInterrupt:
             print("\nCapture interrupted by user.")
         except Exception as e:
