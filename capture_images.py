@@ -155,7 +155,7 @@ if __name__ == "__main__":
     
     # Default settings for quick capture
     CAPTURE_INTERVAL = 0.5  # 0.5 seconds for quick capture
-    TOTAL_IMAGES = 15      # 150 images as requested
+    TOTAL_IMAGES = 150      # 150 images as requested
     
     while True:
 
