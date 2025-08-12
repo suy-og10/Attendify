@@ -4,11 +4,11 @@ A face dataset collection system for building an attendance management system us
 
 ## Features
 
-- **Automated Image Capture**: Captures images at specified time intervals
+- **Automated Image Capture**: Captures images at the specified time intervals
 - **User Input System**: Prompts for student name and roll number
 - **Organized Storage**: Creates structured directories with metadata
-- **Real-time Feedback**: Shows capture progress and countdown
-- **Batch Processing**: Support for multiple students in one session
+- **Real-time Feedback**: Display capture progress and countdown
+- **Batch Processing**: Support for  the multiple students in one session
 
 ## Requirements
 
