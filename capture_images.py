@@ -155,15 +155,12 @@ if __name__ == "__main__":
     
     # Default settings for quick capture
     CAPTURE_INTERVAL = 0.5  # 0.5 seconds for quick capture
-    TOTAL_IMAGES = 150      # 150 images as requested
+    TOTAL_IMAGES = 15      # 150 images as requested
     
     while True:
 
         # Get user input
         name, PRN = get_user_input()
-
-        # Get user input (only name and roll number)
-        name, roll_number = get_user_input()
         
         if name is None:  # User wants to quit
             print("\nThank you for using the Face Dataset Collection System!")
@@ -172,12 +169,8 @@ if __name__ == "__main__":
         print(f"\nPreparing to capture {TOTAL_IMAGES} images with {CAPTURE_INTERVAL} second intervals...")
         
         try:
-
-            # Start image capture
-            capture_images(name, PRN, capture_interval=capture_interval, total_images=total_images)
-
             # Start image capture with default settings
-            capture_images(name, roll_number, capture_interval=CAPTURE_INTERVAL, total_images=TOTAL_IMAGES)
+            capture_images(name, PRN, capture_interval=CAPTURE_INTERVAL, total_images=TOTAL_IMAGES)
 
         except KeyboardInterrupt:
             print("\nCapture interrupted by user.")
