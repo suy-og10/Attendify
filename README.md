@@ -97,5 +97,3 @@ AMS/
 5. Create a Pull Request
 
 ## License
-
-This is modified by me
