@@ -24,7 +24,7 @@ git clone https://github.com/suy-og10/Attendance_Management_System
 cd Attendance_Management_System
 ```
 
-2. Create and activate virtual environment:
+2. Crea and activate virtual environment:
 ```bash
 python -m venv venv
 venv\Scripts\activate  # On Windows
