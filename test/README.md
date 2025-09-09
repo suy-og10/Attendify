@@ -49,7 +49,7 @@ dataset/
 
 ### Usage
 ```bash
-python face_recognizer.py --image path/to/test_image.jpg [--threshold 0.5] [--output output.jpg]
+python face_recognizer.py 
 ```
 
 ### Parameters
@@ -59,7 +59,7 @@ python face_recognizer.py --image path/to/test_image.jpg [--threshold 0.5] [--ou
 
 ### Example
 ```bash
-python face_recognizer.py --image test_image.jpg --threshold 0.6 --output recognized.jpg
+python face_recognizer.py 
 ```
 
 ## Notes
