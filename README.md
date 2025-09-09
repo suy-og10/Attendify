@@ -1,4 +1,4 @@
-# AMS - Attendance Management System
+# Attendify - Mark your presence effectively
 
 A face dataset collection system for building an attendance management system using computer vision.
 
