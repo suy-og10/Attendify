@@ -79,7 +79,7 @@ for person in person_dirs:
 
 print("\nProcessing test image...")
 # Test image
-test_img_path = os.path.join(script_dir, 'class.jpg')
+test_img_path = os.path.join(script_dir, 'cctv2.jpg')
 print(f"Looking for test image at: {test_img_path}")
 print(f"Test image exists: {os.path.exists(test_img_path)}")
 
@@ -147,6 +147,6 @@ for i, face in enumerate(faces, 1):
     except Exception as e:
         print(f"  Error processing face {i}: {str(e)}")
 
-output_path = "recognized_class.jpg"
+output_path = "recognized_class3.jpg"
 cv2.imwrite(output_path, test_img)
 print(f"\nOutput saved as {os.path.abspath(output_path)}")
