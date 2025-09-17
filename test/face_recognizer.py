@@ -1,5 +1,3 @@
-# face_recognizer.py (updated version)
-
 import os
 import cv2
 import numpy as np
@@ -7,6 +5,18 @@ import pickle
 import insightface
 from sklearn.metrics.pairwise import cosine_similarity
 from retina_face_detector import RetinaFaceDetector
+from datetime import datetime
+
+def get_user_input_image_path():
+    """Prompts the user for the path to the image to be processed."""
+    return input("Please enter the path to the image you want to recognize faces in: ").strip()
+
+def create_output_directory(output_dir='recognized_faces'):
+    """Creates an output directory if it doesn't exist."""
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        print(f"Created output directory: {output_dir}")
+    return output_dir
 
 print("Starting face recognition script...")
 
@@ -33,9 +43,9 @@ with open(embeddings_file, 'rb') as f:
 
 print(f"Loaded {len(known_embeddings)} known faces.")
 
-print("\nProcessing test image...")
-# Test image
-test_img_path = os.path.join(script_dir, 'class.jpg')
+# Get input image path from user
+test_img_path = get_user_input_image_path()
+
 if not os.path.exists(test_img_path):
     raise FileNotFoundError(f"Test image not found at {test_img_path}")
 
@@ -51,20 +61,18 @@ if not known_embeddings:
     exit(1)
 
 # Face matching with improved thresholding
-SIMILARITY_THRESHOLD = 0.5  # Lower threshold to be more inclusive
-CONFIDENCE_THRESHOLD = 0.65  # Higher threshold for final decision
+SIMILARITY_THRESHOLD = 0.5
+CONFIDENCE_THRESHOLD = 0.65
 
 for i, face in enumerate(faces, 1):
     try:
         print(f"\nProcessing face {i}/{len(faces)}")
         test_emb = face.embedding.reshape(1, -1)
         
-        # Calculate similarities with all known faces
         sims = cosine_similarity(test_emb, known_embeddings)
         best_match_idx = np.argmax(sims)
         best_similarity = sims[0][best_match_idx]
         
-        # Get all matches above similarity threshold
         valid_matches = [(i, s) for i, s in enumerate(sims[0]) if s >= SIMILARITY_THRESHOLD]
         
         if valid_matches:
@@ -94,6 +102,11 @@ for i, face in enumerate(faces, 1):
     except Exception as e:
         print(f"  Error processing face {i}: {str(e)}")
 
-output_path = "recognized_class4.jpg"
+# Create output directory and generate a unique output filename
+output_dir = create_output_directory()
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+input_filename = os.path.splitext(os.path.basename(test_img_path))[0]
+output_path = os.path.join(output_dir, f"recognized_{input_filename}_{timestamp}.jpg")
+
 cv2.imwrite(output_path, test_img)
 print(f"\nOutput saved as {os.path.abspath(output_path)}")
