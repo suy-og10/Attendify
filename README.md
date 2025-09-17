@@ -20,8 +20,8 @@ A face dataset collection system for building an attendance management system us
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/suy-og10/Attendance_Management_System
-cd Attendance_Management_System
+git clone https://github.com/suy-og10/Attendify
+cd Attendify
 ```
 
 2. Crea and activate virtual environment:
@@ -95,4 +95,3 @@ AMS/
 3. Commit your changes
 4. Push to the branch
 5. Create a Pull Request
-
