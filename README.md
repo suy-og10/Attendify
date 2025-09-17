@@ -8,7 +8,7 @@ A face dataset collection system for building an attendance management system us
 - **User Input System**: Prompts for student name and roll number
 - **Organized Storage**: Creates structured directories with metadata
 - **Real-time Feedback**: Display capture progress and countdown
-- **Batch Processing**: Support for  the multiple students in one session
+- **Batch Processing**: Support for the multiple students in one session
 
 ## Requirements
 
@@ -24,14 +24,14 @@ git clone https://github.com/suy-og10/Attendify
 cd Attendify
 ```
 
-2. Crea and activate virtual environment:
+2. Create and activate virtual environment:
 ```bash
 python -m venv venv
 venv\Scripts\activate  # On Windows
 # source venv/bin/activate  # On Linux/Mac
 ```
 
-3. Instl dependencies:
+3. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
@@ -63,6 +63,23 @@ dataset/
 │   └── ...
 ```
 
+## Test Utilities: Face Detection & Recognition (in `test/`)
+
+This repository includes optional utilities under `test/` for face detection and recognition using InsightFace and RetinaFace.
+
+Quick start:
+1. Prepare your dataset under `dataset/Person_Name_ID/*.jpg`.
+2. Generate embeddings (inside the `test/` directory):
+   ```bash
+   cd test
+   python generate_embeddings.py
+   ```
+3. Run recognition and provide the image path when prompted:
+   ```bash
+   python face_recognizer.py
+   ```
+For details, see `test/README.md`.
+
 ## Controls
 
 - **Press 'q'**: Quit capture early
@@ -77,6 +94,7 @@ AMS/
 ├── photos.py           # Legacy capture script
 ├── requirements.txt    # Python dependencies
 ├── dataset/           # Captured images storage
+├── test/              # Face detection & recognition utilities (see test/README.md)
 └── README.md          # This file
 ```
 
