@@ -80,7 +80,8 @@ Quick start:
    ```
 For details, see `test/README.md`.
 
-   OR
+OR
+
 4. For realtime detection:
    ```bash
    python face_recognizer_realtime.py
