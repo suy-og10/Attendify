@@ -80,6 +80,13 @@ Quick start:
    ```
 For details, see `test/README.md`.
 
+   OR
+4. For realtime detection:
+   ```bash
+   python face_recognizer_realtime.py
+   ```
+
+
 ## Controls
 
 - **Press 'q'**: Quit capture early
