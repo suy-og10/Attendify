@@ -1,126 +1,115 @@
+# Attendify - Mark your presence effectively
 
-````markdown
-# Attendify Web Application 🎓 Attendance Management System
+A face dataset collection system for building an attendance management system using computer vision.
 
-This document outlines the complete, start-to-finish process for setting up and running the Attendify web application, which utilizes **MySQL** for data persistence and **Face Recognition** for attendance tracking.
+## Features
 
----
+- **Automated Image Capture**: Captures images at the specified time intervals
+- **User Input System**: Prompts for student name and roll number
+- **Organized Storage**: Creates structured directories with metadata
+- **Real-time Feedback**: Display capture progress and countdown
+- **Batch Processing**: Support for the multiple students in one session
 
-## I. Project Status Summary
+## Requirements
 
-* **Database:** Switched to **MySQL**. Tables are expected to be created.
-* **Backend:** All major logic files are present.
-* **Frontend:** HTML is ready. **JavaScript has been moved inline** into `take_attendance.html` to bypass static file loading issues.
+- Python 3.7+
+- OpenCV
+- NumPy
 
----
+## Installation
 
-## II. Phase 1: Setup and Initialization (Run Once)
-
-This phase prepares your environment and database connection.
-
-### 1. Environment Setup & Dependency Installation
-
-Because the project path may have changed, you must create a new **virtual environment** (`venv`).
-
-1.  **Create New Venv** (Run from the project root, e.g., `C:\...\Attendify_project\attendify`):
-    ```powershell
-    python -m venv venv
-    ```
-2.  **Activate & Install Dependencies:**
-    ```powershell
-    .\venv\Scripts\Activate.ps1
-    # Install required Python modules
-    pip install Flask openpyxl Werkzeug pandas numpy opencv-python scikit-learn insightface onnxruntime mysql-connector-python
-    ```
-
-### 2. Configure Environment Variables
-
-You must set these in your PowerShell session every time you open a new terminal:
-
-```powershell
-$env:FLASK_APP = "backend.app"
-$env:FLASK_ENV = "development"
-````
-
-### 3\. Database Initialization
-
-Ensure your MySQL server is running and the credentials in `backend/config.py` are correct.
-
-```powershell
-# Initialize database schema (Run this once after environment setup)
-flask init-db
+1. Clone the repository:
+```bash
+git clone https://github.com/suy-og10/Attendify
+cd Attendify
 ```
 
------
+2. Create and activate virtual environment:
+```bash
+python -m venv venv
+venv\Scripts\activate  # On Windows
+# source venv/bin/activate  # On Linux/Mac
+```
 
-## III. Phase 2: Running the Application
+3. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
 
-1.  **Start the Server:** (Ensure environment variables from Step II.2 are set first)
-    ```powershell
-    flask run --host=0.0.0.0
-    ```
-2.  **Access the App:** Open your browser and navigate to:
-    $$\text{http://localhost:5000}$$
+## Usage
 
------
+### Image Capture
 
-## IV. Phase 3: Post-Launch Workflow (Initial Data Setup)
+Run the image capture script:
+```bash
+python capture_images.py
+```
 
-The system requires initial setup by the Admin, HOD, and Teachers before attendance can be taken via face recognition.
+The system will prompt you for:
+- Student name
+- Roll number
+- Capture interval (seconds between images)
+- Total number of images to capture
 
-### 1\. Initial Admin Login & Setup
+### Dataset Structure
 
-1.  **Create Admin User:** First, generate a **hashed password** using Python:
-    ```python
-    from werkzeug.security import generate_password_hash
-    # !! Replace 'your_secret_admin_password' with the actual password you want !!
-    hashed_pw = generate_password_hash('your_secret_admin_password')
-    print(hashed_pw)
-    exit()
-    ```
-    Then, insert the admin user into MySQL:
-    ```sql
-    INSERT INTO users (username, password_hash, full_name, role, is_active, email)
-    VALUES ('admin', 'paste_the_hashed_password_here', 'Administrator', 'Admin', 1, 'admin@example.com');
-    ```
-2.  **Log in** as the `admin` user.
-3.  **Approve HOD:** Approve any pending **Head of Department (HOD)** registrations on the Admin Dashboard.
+Images are organized as follows:
+```
+dataset/
+├── StudentName_RollNumber/
+│   ├── person_info.json
+│   ├── StudentName_RollNumber_image_001.jpg
+│   ├── StudentName_RollNumber_image_002.jpg
+│   └── ...
+```
 
-### 2\. HOD Tasks (Department & Subject Configuration)
+## Test Utilities: Face Detection & Recognition (in `test/`)
 
-Log in as the **HOD**:
+This repository includes optional utilities under `test/` for face detection and recognition using InsightFace and RetinaFace.
 
-  * **Assign Department:** Ensure the HOD's `dept_id` is correctly set in the `users` table.
-    *Example (assuming Dept ID 1 is 'CSBS'):*
-    ```sql
-    UPDATE users
-    SET dept_id = 1
-    WHERE user_id = [HOD_USER_ID]; -- Use the correct HOD user_id
-    ```
-  * **Add Teachers:** Use the HOD Dashboard to add teacher accounts.
-  * **Add Subjects:** Configure subjects for the department (e.g., COA (CS01)).
-  * **Add Schedules:** Create class schedules, linking a **Subject**, **Teacher**, **Division**, and **Day/Time**.
+Quick start:
+1. Prepare your dataset under `dataset/Person_Name_ID/*.jpg`.
+2. Generate embeddings (inside the `test/` directory):
+   ```bash
+   cd test
+   python generate_embeddings.py
+   ```
+3. Run recognition and provide the image path when prompted:
+   ```bash
+   python face_recognizer.py
+   ```
+For details, see `test/README.md`.
 
-### 3\. Teacher Tasks (Face Data & Attendance)
+## Controls
 
-Log in as the **Teacher**:
+- **Press 'q'**: Quit capture early
+- **Automatic capture**: Images are captured at specified intervals
+- **3-second countdown**: Preparation time before capture starts
 
-#### A. Add Student Face Data
-
-1.  Navigate to **Manage Students** $\rightarrow$ **Student List**.
-2.  Click **Edit** next to a student.
-3.  Use **Option 2: Webcam Capture** to click **"Capture & Save Embedding"**. This registers the student's face for recognition.
-
-#### B. Take Attendance
-
-1.  Click **Take Attendance**.
-2.  Select a relevant scheduled session and click **"Continue Session"**.
-3.  Use one of the methods on the attendance page:
-      * **Capture & Recognize Frame** (Webcam input)
-      * **Upload & Recognize Image(s)** (File input)
-      * **Present/Absent Buttons** (Manual override)
-
-<!-- end list -->
+## Project Structure
 
 ```
+AMS/
+├── capture_images.py    # Main image capture script
+├── photos.py           # Legacy capture script
+├── requirements.txt    # Python dependencies
+├── dataset/           # Captured images storage
+├── test/              # Face detection & recognition utilities (see test/README.md)
+└── README.md          # This file
 ```
+
+## Future Enhancements
+
+- Face recognition model training
+- Web-based interface using Flask
+- Attendance tracking system
+- Database integration
+- Real-time attendance monitoring
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
