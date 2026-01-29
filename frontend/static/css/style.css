@@ -1,0 +1,13 @@
+/* Basic Tailwind setup via CDN is usually enough */
+/* You can add custom styles or overrides here if needed */
+
+/* Example: Add a custom style */
+/* .my-custom-class {
+    @apply text-purple-700 border-purple-300;
+} */
+
+/* Style flash messages slightly */
+/* Ensure layout.html adds this class */
+.flash-message {
+    transition: opacity 0.5s ease-out;
+}

@@ -1,0 +1,50 @@
+{% extends "layout.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<h1 class="text-3xl font-bold mb-6 text-gray-800">Admin Dashboard</h1>
+<p class="mb-4 text-gray-600">Welcome, {{ g.user.full_name }}!</p>
+
+<div class="bg-white p-6 rounded-lg shadow-md mb-6">
+    <h2 class="text-xl font-semibold mb-4 text-gray-700">Pending HOD Approvals</h2>
+    {% if pending_hods %}
+        <ul class="divide-y divide-gray-200">
+            {% for hod in pending_hods %}
+            <li class="py-3 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
+                {# HOD Info #}
+                <div>
+                    <p class="font-medium text-gray-800">{{ hod.full_name }} ({{ hod.username }})</p>
+                    <p class="text-sm text-gray-500">{{ hod.email if hod.email else 'No Email' }}</p>
+                </div>
+                {# Action Buttons #}
+                <div class="flex space-x-2">
+                    {# Approve Form #}
+                    <form action="{{ url_for('admin.approve_hod', user_id=hod.user_id) }}" method="POST" class="inline">
+                        <button type="submit" class="bg-green-500 hover:bg-green-600 text-white text-xs font-semibold py-1 px-3 rounded-md transition duration-150">
+                            Approve
+                        </button>
+                    </form>
+                    {# Reject Form (NEW) #}
+                    <form action="{{ url_for('admin.reject_hod', user_id=hod.user_id) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to reject this HOD registration?');">
+                        <button type="submit" class="bg-red-500 hover:bg-red-600 text-white text-xs font-semibold py-1 px-3 rounded-md transition duration-150">
+                            Reject
+                        </button>
+                    </form>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-gray-500">No pending HOD approvals.</p>
+    {% endif %}
+</div>
+
+<div class="bg-white p-6 rounded-lg shadow-md">
+    <h2 class="text-xl font-semibold mb-4 text-gray-700">Management Links</h2>
+    <ul class="list-disc list-inside space-y-2">
+        <li><a href="#" class="text-blue-600 hover:underline">Manage Departments</a></li>
+        <li><a href="#" class="text-blue-600 hover:underline">Manage All Users (HODs, Teachers)</a></li>
+        <li><a href="#" class="text-blue-600 hover:underline">System Settings</a></li>
+    </ul>
+</div>
+{% endblock %}

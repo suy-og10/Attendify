@@ -4,7 +4,7 @@ import numpy as np
 import pickle
 import insightface
 from sklearn.metrics.pairwise import cosine_similarity
-from retina_face_detector import RetinaFaceDetector
+# from retina_face_detector import RetinaFaceDetector
 from datetime import datetime
 
 def get_user_input_image_path():
@@ -22,7 +22,7 @@ print("Starting face recognition script...")
 
 # Initialize detector and embedding model
 print("Initializing models...")
-detector = RetinaFaceDetector()
+# detector = RetinaFaceDetector()
 embedder = insightface.app.FaceAnalysis(name='buffalo_l')
 embedder.prepare(ctx_id=0)
 print("Models initialized successfully")

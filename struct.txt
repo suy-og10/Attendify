@@ -1,0 +1,63 @@
+Attendify/
+│
+├── backend/
+│   ├── __init__.py        # Makes 'backend' a Python package
+│   ├── app.py             # Main Flask application (modified name)
+│   ├── database.py        # Database connection functions
+│   ├── schema.sql         # SQL schema definition
+│   ├── config.py          # Configuration
+│   ├── utils.py          # Helper functions (like password hashing, decorators)
+│   ├── auth/
+│   │   ├── __init__.py
+│   │   └── routes.py      # Login/logout logic
+│   │
+│   ├── admin/
+│   │   ├── __init__.py
+│   │   └── routes.py      # Admin specific routes
+│   │
+│   ├── hod/
+│   │   ├── __init__.py
+│   │   └── routes.py      # HOD specific routes
+│   │
+│   └── teacher/
+│       ├── __init__.py
+│       ├── routes.py      # Teacher specific routes
+│       └── attendance_logic.py # Face rec & attendance marking logic
+│       └── student_logic.py # Student adding/embedding logic
+│       └── reporting_logic.py # Report generation logic
+│
+├── frontend/
+│   ├── templates/
+│   │   ├── layout.html
+│   │   ├── login.html
+|   |   ├── register.html   # Added for HOD registration
+│   │   ├── home.html       # Simple landing/dashboard base
+│   │   ├── admin/
+│   │   │   └── dashboard.html
+│   │   ├── hod/
+│   │   │   └── dashboard.html
+│   │   └── teacher/
+│   │       └── dashboard.html
+│   │       └── add_student.html
+│   │       └── take_attendance.html
+│   │       └── attendance_report.html
+│   │       └── student_list.html
+│   │       └── session_select.html # Page to select session for attendance
+│   │       └── view_attendance.html # Page to view/edit attendance for a session
+│   │
+│   └── static/
+│       ├── css/
+│       │   └── style.css
+│       └── js/
+│           └── attendance.js
+│           └── main.js
+│
+├── attendify.db           # SQLite Database file (will be created)
+├── capture_images.py      # Your original script (keep separate for now)
+├── database_setup.py      # Script to initialize the DB using schema.sql
+├── requirements.txt       # Dependencies
+├── README.md
+├── dataset/               # Keep for initial image collection/training data
+└── test/                  # Your existing test scripts (useful for reference)
+    ├── known_embeddings.pkl # Keep this here for now
+    └── ...

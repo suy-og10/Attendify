@@ -1,0 +1,46 @@
+{% extends "layout.html" %}
+{% block title %}Attendance Report{% endblock %}
+
+{% block content %}
+<h1 class="text-3xl font-bold mb-6 text-gray-800">Generate Attendance Report</h1>
+
+<div class="bg-white p-8 rounded-lg shadow-md max-w-2xl mx-auto">
+    <form method="POST">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="mb-4">
+                <label for="subject_id" class="block text-gray-700 font-semibold mb-2">Subject:</label>
+                <select id="subject_id" name="subject_id" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                    <option value="">Select Subject</option>
+                    {% for subject in subjects %}
+                        <option value="{{ subject.subject_id }}">{{ subject.subject_name }} ({{ subject.subject_code }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+             <div class="mb-4">
+                <label for="division" class="block text-gray-700 font-semibold mb-2">Division (Optional):</label>
+                <input type="text" id="division" name="division" placeholder="e.g., A"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+             <div class="mb-4">
+                <label for="start_date" class="block text-gray-700 font-semibold mb-2">Start Date:</label>
+                <input type="date" id="start_date" name="start_date" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="mb-4">
+                <label for="end_date" class="block text-gray-700 font-semibold mb-2">End Date:</label>
+                <input type="date" id="end_date" name="end_date" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            </div>
+
+        <div class="mt-6">
+            <button type="submit"
+                    class="w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50">
+                Generate Excel Report
+            </button>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

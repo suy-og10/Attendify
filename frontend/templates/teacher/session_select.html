@@ -1,0 +1,53 @@
+{% extends "layout.html" %}
+{% block title %}Select Session{% endblock %}
+
+{% block content %}
+<h1 class="text-3xl font-bold mb-6 text-gray-800">Select Session for Attendance</h1>
+<p class="mb-4 text-gray-600">Today's Date: {{ today_date }}</p>
+
+<div class="bg-white p-6 rounded-lg shadow-md">
+    <h2 class="text-xl font-semibold mb-4 text-gray-700">Your Scheduled Classes Today</h2>
+    {% if schedules %}
+        <ul class="divide-y divide-gray-200">
+            {% for schedule in schedules %}
+            <li class="py-3 flex justify-between items-center">
+                <div>
+                    <p class="font-medium text-gray-800">
+                        {{ schedule.subject_name }} ({{ schedule.subject_code }}) - Div {{ schedule.division }}
+                    </p>
+                    <p class="text-sm text-gray-500">
+                        Time: {{ schedule.start_time }} - {{ schedule.end_time }} | Year: {{ schedule.academic_year }}
+                    </p>
+                </div>
+                <div>
+                    {% set session_info = sessions_today.get(schedule.schedule_id) %}
+                    {% if session_info %}
+                        {% if session_info.status == 'ONGOING' or session_info.status == 'SCHEDULED' %}
+                             <a href="{{ url_for('teacher.take_attendance_page', session_id=session_info.session_id) }}" class="bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-semibold py-1 px-3 rounded-md">
+                                Continue Session
+                            </a>
+                        {% elif session_info.status == 'COMPLETED' %}
+                             <a href="{{ url_for('teacher.view_attendance', session_id=session_info.session_id) }}" class="bg-gray-400 hover:bg-gray-500 text-white text-sm font-semibold py-1 px-3 rounded-md">
+                                View Completed
+                            </a>
+                        {% else %}
+                             <span class="text-sm text-red-500">Cancelled</span>
+                        {% endif %}
+                    {% else %}
+                        <form action="{{ url_for('teacher.start_session') }}" method="POST">
+                            <input type="hidden" name="schedule_id" value="{{ schedule.schedule_id }}">
+                            <input type="hidden" name="session_date" value="{{ today_date }}">
+                            <button type="submit" class="bg-green-500 hover:bg-green-600 text-white text-sm font-semibold py-1 px-3 rounded-md">
+                                Start Session
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-gray-500">You have no scheduled classes for today.</p>
+    {% endif %}
+</div>
+{% endblock %}

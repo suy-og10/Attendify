@@ -60,7 +60,7 @@ python generate_embeddings.py
 ### Step 2: Run face recognition
 Run the recognizer and provide the test image path when prompted. The script will detect faces using InsightFace and match them against the known embeddings.
 ```bash
-python face_recognizer.py
+python face_recognizer_realtime.py
 ```
 - You will be prompted: "Please enter the path to the image you want to recognize faces in:"
 - Output image is saved under `test/recognized_faces/recognized_<input-name>_<timestamp>.jpg`

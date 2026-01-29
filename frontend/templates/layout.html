@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Attendify{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>    
+    <style>
+        .flash-message {
+            transition: opacity 0.5s ease-out;
+        }
+    </style>
+
+    {% block head_extra %}{% endblock %} 
+    
+</head>
+<body class="bg-gray-100 font-sans">
+    <nav class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="{{ url_for('auth.home') }}" class="text-2xl font-bold tracking-tight">Attendify</a>
+            <div>
+                {% if g.user %}
+                    <span class="mr-4">Welcome, {{ g.user.full_name }}!</span>
+                    {% if g.user.role == 'Admin' %}
+                        <a href="{{ url_for('admin.dashboard') }}" class="px-3 py-1 hover:bg-blue-700 rounded transition duration-150">Admin Dash</a>
+                    {% elif g.user.role == 'HOD' %}
+                         <a href="{{ url_for('hod.dashboard') }}" class="px-3 py-1 hover:bg-blue-700 rounded transition duration-150">HOD Dash</a>
+                    {% elif g.user.role == 'Teacher' %}
+                         <a href="{{ url_for('teacher.dashboard') }}" class="px-3 py-1 hover:bg-blue-700 rounded transition duration-150">Teacher Dash</a>
+                    {% endif %}
+                    <a href="{{ url_for('auth.logout') }}" class="px-3 py-1 bg-red-500 hover:bg-red-600 rounded transition duration-150">Logout</a>
+                {% else %}
+                     <a href="{{ url_for('auth.login') }}" class="px-3 hover:text-blue-200">Login</a>
+                     {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto mt-6 p-4 md:px-0">
+        {# Flash Messages #}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="mb-4 space-y-2">
+                {% for category, message in messages %}
+                {% set alert_color = 'blue' %} {# Default #}
+                {% if category == 'error' %} {% set alert_color = 'red' %}
+                {% elif category == 'success' %} {% set alert_color = 'green' %}
+                {% elif category == 'warning' %} {% set alert_color = 'yellow' %}
+                {% endif %}
+                <div class="flash-message p-4 text-sm rounded-lg bg-{{ alert_color }}-100 text-{{ alert_color }}-700 border border-{{ alert_color }}-200" role="alert">
+                   <span class="font-medium">{{ category|capitalize }}:</span> {{ message }}
+                </div>
+                {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {# Main Content Block #}
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="text-center mt-12 mb-6 text-gray-500 text-sm">
+        &copy; {{ now().year }} Attendify - Face Recognition Attendance System
+    </footer>
+
+    <!-- <script src="{{ url_for('static', filename='js/main.js') }}"></script> -->
+    {% block scripts %}
+<script>
+// Logic from frontend/static/js/main.js
+console.log("Attendify Main JS Loaded");
+
+// Example: Auto-hide flash messages after a few seconds
+document.addEventListener('DOMContentLoaded', (event) => {
+    const flashMessages = document.querySelectorAll('.flash-message'); // Add a common class to your flash message divs
+    flashMessages.forEach(flashMessage => {
+        setTimeout(() => {
+            flashMessage.style.transition = 'opacity 0.5s ease';
+            flashMessage.style.opacity = '0';
+            setTimeout(() => {
+                 flashMessage.style.display = 'none'; // Or just hide
+            }, 500); // Wait for fade out
+        }, 5000); // Hide after 5 seconds
+    });
+
+     // Add confirmation for delete actions (example)
+    const deleteButtons = document.querySelectorAll('.delete-button'); // Add this class to delete links/buttons
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            if (!confirm('Are you sure you want to delete this item? This action cannot be undone.')) {
+                e.preventDefault(); // Prevent the default action (e.g., following a link or submitting a form)
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+</body>
+</html>

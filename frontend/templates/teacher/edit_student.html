@@ -1,0 +1,221 @@
+{% extends "layout.html" %}
+{% block title %}Edit Student{% endblock %}
+
+{% block content %}
+<h1 class="text-3xl font-bold mb-6 text-gray-800">Edit Student: {{ student.student_name }}</h1>
+
+{# Display current embedding count #}
+<p class="mb-4 text-gray-600">Current active face embeddings: <span id="embedding-count-display" class="font-semibold">{{ embedding_count }}</span></p>
+{# --- Form to Update Student Details --- #}
+<form method="POST" enctype="multipart/form-data" class="bg-white p-8 rounded-lg shadow-md max-w-2xl mx-auto mb-8">
+    <h2 class="text-xl font-semibold mb-4 border-b pb-2 text-gray-700">Student Details</h2>
+    {# Pass form_data back on error to repopulate fields, otherwise use student data #}
+    {% set form_data = form_data or student %}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="mb-4">
+            <label for="student_name" class="block text-gray-700 font-semibold mb-2">Student Name:</label>
+            <input type="text" id="student_name" name="student_name" required value="{{ form_data.get('student_name', '') }}"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div class="mb-4">
+            <label for="prn" class="block text-gray-700 font-semibold mb-2">PRN (10 digits):</label>
+            <input type="text" id="prn" name="prn" pattern="\d{10}" title="PRN must be 10 digits" required value="{{ form_data.get('prn', '') }}"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+         <div class="mb-4">
+            <label for="roll_no" class="block text-gray-700 font-semibold mb-2">Roll No (Optional):</label>
+            <input type="text" id="roll_no" name="roll_no" value="{{ form_data.get('roll_no', '') or '' }}"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div class="mb-4">
+            <label for="division" class="block text-gray-700 font-semibold mb-2">Division:</label>
+            <input type="text" id="division" name="division" required value="{{ form_data.get('division', '') or '' }}" maxlength="10"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase" placeholder="e.g., A">
+        </div>
+         <div class="mb-4">
+            <label for="academic_year" class="block text-gray-700 font-semibold mb-2">Academic Year:</label>
+            <input type="text" id="academic_year" name="academic_year" required value="{{ form_data.get('academic_year', '') }}" placeholder="e.g., SE or 2025-26"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+         <div class="mb-4">
+            <label for="dept_id" class="block text-gray-700 font-semibold mb-2">Department:</label>
+            <select id="dept_id" name="dept_id" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                <option value="">Select Department</option>
+                {% for dept in departments %}
+                    <option value="{{ dept.dept_id }}" {% if form_data.get('dept_id') | int == dept.dept_id %}selected{% endif %}>
+                        {{ dept.dept_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+         <div class="mb-4">
+            <label for="email" class="block text-gray-700 font-semibold mb-2">Email (Optional):</label>
+            <input type="email" id="email" name="email" value="{{ form_data.get('email', '') or '' }}"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+         <div class="mb-4">
+            <label for="phone" class="block text-gray-700 font-semibold mb-2">Phone (Optional):</label>
+            <input type="tel" id="phone" name="phone" value="{{ form_data.get('phone', '') or '' }}"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div class="mb-4 md:col-span-2">
+             <label class="flex items-center space-x-2 text-gray-700">
+                <input type="checkbox" name="is_active" {% if form_data.get('is_active', True) %}checked{% endif %} class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                <span>Student is Active</span>
+             </label>
+        </div>
+    </div> {# End Grid #}
+
+    <div class="mt-6 pt-4 border-t">
+        <h3 class="text-lg font-medium mb-2 text-gray-700">Add Face Data (Option 1: Upload Images)</h3>
+        <p class="text-sm text-gray-500 mb-2">Upload 1 to 15 clear, frontal face images.</p>
+        <label for="student_images" class="block text-gray-600 mb-1">Select image file(s):</label>
+        <input type="file" id="student_images" name="student_images" accept="image/png, image/jpeg, image/jpg" multiple
+               class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+    </div>
+
+    <div class="mt-6">
+        <button type="submit"
+                class="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50">
+            Save Changes & Upload Images
+        </button>
+    </div>
+</form>
+
+{# --- Section for Webcam Capture --- #}
+<div class="bg-white p-8 rounded-lg shadow-md max-w-2xl mx-auto mt-8">
+    <h2 class="text-xl font-semibold mb-4 border-b pb-2 text-gray-700">Add Face Data (Option 2: Webcam Capture)</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+        <div>
+            <div class="relative aspect-video bg-gray-300 rounded overflow-hidden mb-4 border">
+                 <video id="webcam-capture-feed" autoplay playsinline class="w-full h-full object-cover"></video>
+                 <canvas id="capture-canvas" class="hidden"></canvas> {# Hidden canvas for snapshot #}
+            </div>
+            <button id="capture-embedding-button" disabled
+                    class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                Capture & Save Embedding
+            </button>
+            <p id="capture-status" class="text-sm text-gray-600 mt-2 text-center"></p>
+        </div>
+        <div class="text-gray-600 text-sm">
+            <p>Position the student's face clearly in the frame.</p>
+            <p>Ensure good lighting and a neutral expression.</p>
+            <p>Click the button to capture a single image and generate the face embedding.</p>
+        </div>
+    </div>
+</div>
+
+
+ <div class="mt-8 text-center">
+     <a href="{{ url_for('teacher.list_students') }}" class="text-gray-600 hover:underline text-sm">&larr; Back to Student List</a>
+ </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// JavaScript for Webcam Capture on Edit Page
+document.addEventListener('DOMContentLoaded', () => {
+    const videoElement = document.getElementById('webcam-capture-feed');
+    const canvasElement = document.getElementById('capture-canvas');
+    const context = canvasElement ? canvasElement.getContext('2d') : null;
+    const captureButton = document.getElementById('capture-embedding-button');
+    const statusElement = document.getElementById('capture-status');
+    const studentId = {{ student.student_id | tojson }}; // No extra {}
+
+    let stream = null; // To hold the stream object
+
+    async function setupWebcamCapture() {
+        if (!videoElement || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            statusElement.textContent = 'Webcam not supported or found.';
+            statusElement.className = 'text-sm text-red-600 mt-2 text-center';
+            return;
+        }
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            videoElement.srcObject = stream;
+            videoElement.onloadedmetadata = () => {
+                videoElement.play();
+                captureButton.disabled = false; // Enable button
+                statusElement.textContent = 'Webcam ready.';
+                statusElement.className = 'text-sm text-green-600 mt-2 text-center';
+                console.log("Webcam setup complete for embedding capture.");
+            };
+        } catch (err) {
+            console.error("Error accessing webcam:", err);
+            statusElement.textContent = `Error: ${err.message}. Check permissions.`;
+            statusElement.className = 'text-sm text-red-600 mt-2 text-center';
+            captureButton.disabled = true;
+        }
+    }
+
+    async function captureAndSendEmbedding() {
+        if (!videoElement || !context || videoElement.readyState < 3) {
+            statusElement.textContent = 'Webcam not ready.';
+            statusElement.className = 'text-sm text-red-600 mt-2 text-center';
+            return;
+        }
+        if (!studentId) {
+             statusElement.textContent = 'Error: Student ID not found.';
+             return;
+        }
+
+        captureButton.disabled = true;
+        captureButton.textContent = 'Capturing...';
+        statusElement.textContent = 'Processing...';
+        statusElement.className = 'text-sm text-blue-600 mt-2 text-center animate-pulse';
+
+
+        try {
+            canvasElement.width = videoElement.videoWidth;
+            canvasElement.height = videoElement.videoHeight;
+            context.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+            const imageDataUrl = canvasElement.toDataURL('image/jpeg', 0.9); // High quality JPEG
+
+            const response = await fetch("{{ url_for('teacher.api_capture_embedding') }}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    student_id: studentId,
+                    image_data: imageDataUrl
+                }),
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || `Server error: ${response.status}`);
+            }
+
+            statusElement.textContent = `Success! ${result.message} New count: ${result.new_embedding_count}`;
+            statusElement.className = 'text-sm text-green-600 mt-2 text-center';
+            // Optionally update the count display near the top of the page
+            const countSpan = document.querySelector('#embedding-count-display'); // Need to add this ID to the span
+            if(countSpan) countSpan.textContent = result.new_embedding_count;
+
+        } catch (error) {
+            console.error('Error capturing/sending embedding:', error);
+            statusElement.textContent = `Error: ${error.message}`;
+            statusElement.className = 'text-sm text-red-600 mt-2 text-center';
+        } finally {
+            captureButton.disabled = false;
+            captureButton.textContent = 'Capture & Save Embedding';
+        }
+    }
+
+    // Attach listener
+    if (captureButton) {
+        captureButton.addEventListener('click', captureAndSendEmbedding);
+    }
+
+    // Initialize webcam when the page loads
+    setupWebcamCapture();
+
+    // Cleanup: Stop webcam stream when navigating away (optional but good practice)
+    window.addEventListener('beforeunload', () => {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+    });
+});
+</script>
+{% endblock %}

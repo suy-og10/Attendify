@@ -1,0 +1,438 @@
+{% extends "layout.html" %}
+{% block title %}Take Attendance - Session {{ session_info.session_id }}{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-6">
+    <div>
+        <h1 class="text-3xl font-bold text-gray-800">Take Attendance</h1>
+        {% if session_info %}
+        <p class="text-gray-600">
+            <span class="font-semibold">{{ session_info.subject_name }} ({{ session_info.subject_code }})</span> |
+            Division: {{ session_info.division }} |
+            Date: {{ session_info.session_date }}
+        </p>
+        {% endif %}
+    </div>
+    <a href="{{ url_for('teacher.select_session') }}" class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-md text-sm">
+        &larr; Back to Sessions
+    </a>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    
+    {# COLUMN 1 & 2: RECOGNITION INTERFACE (Webcam + Upload) #}
+    <div class="lg:col-span-2 space-y-6">
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700 border-b pb-2">Option 1: Live Webcam Capture</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                {# Webcam Video Feed #}
+                <div>
+                    <div class="relative aspect-video bg-gray-200 rounded overflow-hidden mb-3 border border-gray-300">
+                         <video id="webcam-feed" autoplay playsinline class="w-full h-full object-cover bg-black"></video>
+                         {# Hidden canvas for snapshot #}
+                         <canvas id="snapshot-canvas" class="hidden"></canvas>
+                    </div>
+                    <button id="recognize-button" disabled
+                            class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Capture & Recognize Frame
+                    </button>
+                    <p id="webcam-status" class="text-sm text-center mt-2 text-red-500">Webcam initializing...</p>
+                </div>
+                
+                {# Recognition Results Display #}
+                <div class="p-4 bg-gray-50 rounded border border-gray-200 h-full">
+                    <h3 class="text-lg font-semibold mb-2 text-gray-700">Recognition Log</h3>
+                    <div id="recognition-results">
+                        <p class="text-gray-500 text-sm">Recognized students will be marked present automatically.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700 border-b pb-2">Option 2: Upload Classroom Image(s)</h2>
+            <p class="text-sm text-gray-500 mb-3">Upload 1-3 high-resolution images of the class to mark attendance.</p>
+            
+            <label for="upload-attendance-image" class="block text-gray-700 font-semibold mb-1">Select image file(s):</label>
+            <input type="file" id="upload-attendance-image" name="attendance_images" accept="image/png, image/jpeg, image/jpg" multiple
+                   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                   
+             <button id="upload-recognize-button"
+                    class="mt-3 w-full bg-green-600 text-white font-bold py-2 px-4 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                Upload & Recognize Image(s)
+            </button>
+        </div>
+    </div>
+    
+    {# COLUMN 3: STUDENT LIST & MANUAL MARKING #}
+    <div class="lg:col-span-1 bg-white p-6 rounded-lg shadow-md max-h-[80vh] overflow-y-auto">
+        <h2 class="text-xl font-semibold mb-4 text-gray-700 border-b pb-2">Students (Total: {{ students|length }})</h2>
+        
+        <div id="student-attendance-list" class="divide-y divide-gray-100">
+            {% for student in students %}
+            <div data-student-id="{{ student.student_id }}" class="py-3">
+                <p class="font-medium text-gray-900">
+                    {# --- SR. NO. ADDED HERE --- #}
+                    <span class="text-sm font-bold text-gray-500 mr-2">{{ loop.index }}.</span>
+                    {# -------------------------- #}
+                    
+                    {{ student.student_name }} <span class="text-xs text-gray-500">({{ student.prn }})</span>
+                </p>
+                <div class="flex justify-between items-center mt-1">
+                    {# Dynamic Status Display #}
+                    <span class="attendance-status text-sm font-semibold 
+                        {% if student.status == 'Present' %}text-green-600
+                        {% elif student.status == 'Late' %}text-yellow-600
+                        {% else %}text-red-600{% endif %}" data-current-status="{{ student.status | lower }}">
+                        {{ student.status }}
+                    </span>
+                    
+                    {# Manual Mark Buttons #}
+                    <div class="flex space-x-1">
+                        <button data-student-id="{{ student.student_id }}" data-status="Present" class="manual-mark-btn px-2 py-1 text-xs font-semibold rounded 
+                            {% if student.status == 'Present' %}bg-green-200{% else %}bg-green-500 text-white hover:bg-green-600{% endif %}">
+                            Present
+                        </button>
+                        <button data-student-id="{{ student.student_id }}" data-status="Absent" class="manual-mark-btn px-2 py-1 text-xs font-semibold rounded 
+                            {% if student.status == 'Absent' %}bg-red-200{% else %}bg-red-500 text-white hover:bg-red-600{% endif %}">
+                            Absent
+                        </button>
+                        {# Optional: Add Late Button #}
+                        {#
+                        <button data-student-id="{{ student.student_id }}" data-status="Late" class="manual-mark-btn px-2 py-1 text-xs font-semibold rounded bg-yellow-500 text-white hover:bg-yellow-600">
+                            Late
+                        </button>
+                        #}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{# Button to finalize session (implement route later) #}
+<div class="mt-6 p-4 bg-white rounded-lg shadow-md text-center">
+    <button id="end-session-button" class="bg-red-600 text-white font-bold py-2 px-6 rounded-md hover:bg-red-700">
+        End & Finalize Session Attendance
+    </button>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const videoElement = document.getElementById('webcam-feed');
+    const canvasElement = document.getElementById('snapshot-canvas');
+    const context = canvasElement ? canvasElement.getContext('2d') : null;
+    const recognizeButton = document.getElementById('recognize-button');
+    const uploadInput = document.getElementById('upload-attendance-image');
+    const uploadRecognizeButton = document.getElementById('upload-recognize-button');
+    const resultsDiv = document.getElementById('recognition-results');
+    const studentListDiv = document.getElementById('student-attendance-list');
+    const webcamStatusElement = document.getElementById('webcam-status');
+    const endSessionButton = document.getElementById('end-session-button'); // <-- FIX: Added this
+    
+    // Get Session ID from the URL path (e.g., /take/1 -> 1)
+    const currentSessionId = window.location.pathname.split('/').pop();
+    let stream = null; 
+
+    if (isNaN(parseInt(currentSessionId, 10))) {
+        webcamStatusElement.textContent = 'ERROR: Invalid Session ID.';
+        if(recognizeButton) recognizeButton.disabled = true;
+        if(uploadRecognizeButton) uploadRecognizeButton.disabled = true;
+        return;
+    }
+
+    // --- Webcam Setup ---
+    async function setupWebcam() {
+        if (!videoElement) return; 
+        try {
+            // Request video stream
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            videoElement.srcObject = stream;
+            videoElement.onloadedmetadata = () => {
+                videoElement.play();
+                recognizeButton.disabled = false;
+                webcamStatusElement.textContent = 'Webcam ready.';
+                webcamStatusElement.className = 'text-sm text-green-600 mt-2 text-center';
+            };
+        } catch (err) {
+            console.error("Error accessing webcam:", err);
+            recognizeButton.disabled = true;
+            webcamStatusElement.textContent = `Error: ${err.name}. Check browser permissions.`;
+            webcamStatusElement.className = 'text-sm text-red-600 mt-2 text-center';
+        }
+    }
+
+    // --- Recognition API Call ---
+    async function sendImageForRecognition(imageDataUrl, verificationMethod = 'FACE_LIVE') {
+        resultsDiv.innerHTML = '<p class="text-blue-500 animate-pulse">Recognizing...</p>';
+        
+        try {
+            const response = await fetch("{{ url_for('teacher.api_recognize_attendance') }}", { 
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    session_id: currentSessionId,
+                    image_data: imageDataUrl,
+                    method: verificationMethod
+                 }),
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || `Server error (Status: ${response.status})`);
+            }
+
+            displayRecognitionResults(result);
+            updateStudentListStatus(result.recognized); 
+
+        } catch (error) {
+            console.error('API Call Error:', error);
+            resultsDiv.innerHTML = `<p class="text-red-500 font-medium">Recognition Failed: ${error.message}</p>`;
+        }
+    }
+    
+    // --- Display Recognition Results ---
+    function displayRecognitionResults(result) {
+        let html = '<h3 class="text-lg font-semibold mb-2">Recognition Log:</h3><ul class="list-disc list-inside space-y-1">';
+        let foundRecognized = false;
+
+        if (result.recognized && result.recognized.length > 0) {
+            result.recognized.forEach(student => {
+                html += `<li class="text-green-600">Present: ${student.name} (${student.prn}) - Score: ${student.confidence.toFixed(2)}</li>`;
+                foundRecognized = true;
+            });
+        }
+        if (result.unknown_count > 0) {
+            html += `<li class="text-yellow-600">${result.unknown_count} Unknown face(s) detected/skipped.</li>`;
+        }
+        if (result.db_errors && result.db_errors.length > 0) {
+            html += `<li class="text-red-600">DB Error(s): Failed to mark ${result.db_errors.length} record(s).</li>`;
+        }
+
+        if (!foundRecognized && result.unknown_count === 0 && result.marked_count === 0) {
+             html += '<li class="text-gray-500">No known students recognized.</li>';
+        }
+        html += `<li class="mt-2 text-sm font-semibold">Marked Present: ${result.marked_count}</li></ul>`;
+        resultsDiv.innerHTML = html;
+    }
+
+    // --- Update Student List UI ---
+    function updateStudentListStatus(recognizedStudents) {
+        if (!recognizedStudents || recognizedStudents.length === 0 || !studentListDiv) return;
+
+        recognizedStudents.forEach(recStudent => {
+            const studentRow = studentListDiv.querySelector(`[data-student-id="${recStudent.student_id}"]`); 
+            if (studentRow) {
+                const statusSpan = studentRow.querySelector('.attendance-status');
+                const presentBtn = studentRow.querySelector('[data-status="Present"]');
+                const absentBtn = studentRow.querySelector('[data-status="Absent"]');
+                
+                if (statusSpan) {
+                    statusSpan.textContent = 'Present';
+                    statusSpan.className = 'attendance-status text-sm font-semibold text-green-600';
+                }
+                
+                if (presentBtn) {
+                    presentBtn.classList.add('bg-green-200', 'text-green-800');
+                    presentBtn.classList.remove('bg-green-500', 'text-white', 'hover:bg-green-600');
+                }
+                 if (absentBtn) {
+                    absentBtn.classList.remove('bg-red-200', 'text-red-800');
+                    absentBtn.classList.add('bg-red-500', 'text-white', 'hover:bg-red-600');
+                }
+            }
+        });
+    }
+
+    // --- Event Handlers ---
+
+    // 1. Capture from Webcam
+    if (recognizeButton) {
+        recognizeButton.addEventListener('click', () => {
+            if (!videoElement || !context || videoElement.readyState < 3) {
+                webcamStatusElement.textContent = `Webcam not ready. Status: ${videoElement.readyState}`;
+                return;
+            }
+            try {
+                canvasElement.width = videoElement.videoWidth;
+                canvasElement.height = videoElement.videoHeight;
+                context.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+                const imageDataUrl = canvasElement.toDataURL('image/jpeg', 0.9);
+                
+                recognizeButton.disabled = true;
+                recognizeButton.textContent = 'Processing...';
+
+                sendImageForRecognition(imageDataUrl, 'FACE_LIVE').finally(() => {
+                    recognizeButton.disabled = false;
+                    recognizeButton.textContent = 'Capture & Recognize Frame';
+                });
+
+            } catch (e) {
+                 console.error("Error capturing frame:", e);
+                 resultsDiv.innerHTML = `<p class="text-red-500">Error capturing frame from webcam.</p>`;
+            }
+        });
+    }
+
+    // 2. Recognize from Uploaded Image(s) [FIXED to handle multiple]
+     if (uploadRecognizeButton && uploadInput) {
+        
+        // Helper function to read a file as a Base64 Data URL
+        const readFileAsDataURL = (file) => {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        };
+
+        uploadRecognizeButton.addEventListener('click', async () => { // Make the function async
+            const files = uploadInput.files;
+            if (files.length === 0) {
+                resultsDiv.innerHTML = '<p class="text-yellow-600">Please select one or more image files first.</p>';
+                return;
+            }
+            
+            uploadRecognizeButton.disabled = true;
+            resultsDiv.innerHTML = `<p class="text-blue-500 animate-pulse">Processing ${files.length} uploaded image(s)...</p>`;
+
+            // Loop through all selected files
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                uploadRecognizeButton.textContent = `Processing ${i + 1}/${files.length} (${file.name})...`;
+                
+                try {
+                    // Read the file
+                    const imageDataUrl = await readFileAsDataURL(file);
+                    
+                    // Send this single file for recognition and wait for it
+                    await sendImageForRecognition(imageDataUrl, 'FACE_UPLOAD');
+
+                } catch (err) {
+                    console.error("Error reading or processing file:", file.name, err);
+                    resultsDiv.innerHTML += `<p class="text-red-500">Error processing ${file.name}: ${err.message}</p>`;
+                }
+            }
+
+            // After the loop finishes
+            uploadRecognizeButton.disabled = false;
+            uploadRecognizeButton.textContent = 'Upload & Recognize Image(s)';
+            uploadInput.value = ''; // Clear the file input
+            resultsDiv.innerHTML += '<p class="text-green-600 font-semibold">All uploaded images processed.</p>';
+        });
+     }
+
+    // 3. Manual Marking (using event delegation on the list)
+     if (studentListDiv) {
+        studentListDiv.addEventListener('click', (event) => {
+            if (event.target.classList.contains('manual-mark-btn')) {
+                const button = event.target;
+                const studentId = button.dataset.studentId;
+                const newStatus = button.dataset.status; 
+                
+                if (!studentId || !newStatus || !currentSessionId) return;
+
+                // Disable all buttons in this row temporarily
+                studentListDiv.querySelector(`[data-student-id="${studentId}"]`).querySelectorAll('button').forEach(btn => btn.disabled = true);
+                
+                fetch("{{ url_for('teacher.api_mark_manual') }}", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        session_id: currentSessionId,
+                        student_id: parseInt(studentId, 10),
+                        status: newStatus
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const row = studentListDiv.querySelector(`[data-student-id="${studentId}"]`);
+                        if (row) {
+                            const statusSpan = row.querySelector('.attendance-status');
+                            statusSpan.textContent = newStatus;
+                            statusSpan.className = `attendance-status text-sm font-semibold ${
+                                newStatus === 'Present' ? 'text-green-600' : (newStatus === 'Late' ? 'text-yellow-600' : 'text-red-600')
+                            }`;
+                            
+                            // Highlight the active button
+                            row.querySelectorAll('button').forEach(btn => {
+                                btn.disabled = false; // Re-enable
+                                btn.classList.remove('bg-green-200', 'bg-red-200', 'text-green-800', 'text-red-800');
+                                if (btn.dataset.status === newStatus) {
+                                    btn.classList.add(`bg-${newStatus.toLowerCase()}-200`, `text-${newStatus.toLowerCase()}-800`);
+                                    btn.classList.remove(`bg-${newStatus.toLowerCase()}-500`, 'text-white', `hover:bg-${newStatus.toLowerCase()}-600`);
+                                } else {
+                                    // Reset inactive buttons to default color
+                                    const statusColor = btn.dataset.status.toLowerCase();
+                                    btn.classList.add(`bg-${statusColor}-500`, 'text-white', `hover:bg-${statusColor}-600`);
+                                }
+                            });
+                        }
+                    } else {
+                         throw new Error(data.error || 'Manual marking failed.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error manual marking:', error);
+                    alert(`Error manual marking: ${error.message}`); 
+                    studentListDiv.querySelector(`[data-student-id="${studentId}"]`).querySelectorAll('button').forEach(btn => btn.disabled = false); // Re-enable on error
+                });
+            }
+        });
+     }
+
+    // 4. End & Finalize Session [FIX: Added this]
+    if (endSessionButton) {
+        endSessionButton.addEventListener('click', () => {
+            if (!confirm('Are you sure you want to end this session?\nThis will mark all remaining students as "Absent" and lock the session.')) {
+                return;
+            }
+
+            endSessionButton.disabled = true;
+            endSessionButton.textContent = 'Finalizing...';
+
+            fetch("{{ url_for('teacher.api_end_session') }}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    session_id: currentSessionId
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    // Redirect back to the session selection page
+                    window.location.href = "{{ url_for('teacher.select_session') }}";
+                } else {
+                    throw new Error(data.error || 'Failed to end session.');
+                }
+            })
+            .catch(error => {
+                console.error('Error ending session:', error);
+                alert(`Error: ${error.message}`);
+                endSessionButton.disabled = false;
+                endSessionButton.textContent = 'End & Finalize Session Attendance';
+            });
+        });
+    }
+
+    // Initialize webcam when the page loads
+    setupWebcam();
+
+    // Cleanup: Stop webcam stream when navigating away
+    window.addEventListener('beforeunload', () => {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+    });
+});
+</script>
+{% endblock %}

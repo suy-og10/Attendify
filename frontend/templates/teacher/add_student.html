@@ -1,0 +1,83 @@
+{% extends "layout.html" %}
+{% block title %}Add Student{% endblock %}
+
+{% block content %}
+<h1 class="text-3xl font-bold mb-6 text-gray-800">Add New Student</h1>
+
+<form method="POST" enctype="multipart/form-data" class="bg-white p-8 rounded-lg shadow-md max-w-lg mx-auto">
+    {# Pass form_data back on error to repopulate fields #}
+    {% set form_data = form_data or {} %}
+    <div class="mb-4">
+        <label for="student_name" class="block text-gray-700 font-semibold mb-2">Student Name:</label>
+        <input type="text" id="student_name" name="student_name" value="{{ form_data.get('student_name', '') }}"
+               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </div>
+    <div class="mb-4">
+        <label for="prn" class="block text-gray-700 font-semibold mb-2">PRN (10 digits):</label>
+        <input type="text" id="prn" name="prn" pattern="\d{10}" title="PRN must be 10 digits" value="{{ form_data.get('prn', '') }}"
+               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </div>
+     <div class="mb-4">
+        <label for="roll_no" class="block text-gray-700 font-semibold mb-2">Roll No (Optional):</label>
+        <input type="text" id="roll_no" name="roll_no" value="{{ form_data.get('roll_no', '') }}"
+               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </div>
+    <div class="mb-4">
+        <label for="division" class="block text-gray-700 font-semibold mb-2">Division:</label>
+        <input type="text" id="division" name="division" value="{{ form_data.get('division', '') }}" maxlength="10"
+               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., A">
+    </div>
+     <div class="mb-4">
+        <label for="academic_year" class="block text-gray-700 font-semibold mb-2">Academic Year:</label>
+        <input type="text" id="academic_year" name="academic_year" value="{{ form_data.get('academic_year', '') }}" placeholder="e.g., SE or 2025-26"
+               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </div>
+     <div class="mb-4">
+        <label for="dept_id" class="block text-gray-700 font-semibold mb-2">Department:</label>
+        <select id="dept_id" name="dept_id" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+            <option value="">Select Department</option>
+            {% for dept in departments %}
+                <option value="{{ dept.dept_id }}" {% if (form_data.get('dept_id') | int == dept.dept_id) or (not form_data and teacher_dept_id == dept.dept_id) %}selected{% endif %}>
+                    {{ dept.dept_name }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+     <div class="mb-4">
+        <label for="email" class="block text-gray-700 font-semibold mb-2">Email (Optional):</label>
+        <input type="email" id="email" name="email" value="{{ form_data.get('email', '') }}"
+               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </div>
+     <div class="mb-4">
+        <label for="phone" class="block text-gray-700 font-semibold mb-2">Phone (Optional):</label>
+        <input type="tel" id="phone" name="phone" value="{{ form_data.get('phone', '') }}"
+               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </div>
+
+    <div class="mb-4 p-4 border border-dashed border-gray-300 rounded-md">
+         <h3 class="text-lg font-medium mb-2 text-gray-700">Option 1: Upload Face Images (Optional)</h3>
+         <label for="student_images" class="block text-gray-600 mb-1">Select image file(s):</label>
+         <input type="file" id="student_images" name="student_images" accept="image/png, image/jpeg, image/jpg" multiple
+                class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+        <p class="text-xs text-gray-500 mt-1">Upload 1-15 clear, frontal face images.</p>
+    </div>
+
+     <div class="mb-6 p-4 border border-dashed border-gray-300 rounded-md">
+        <h3 class="text-lg font-medium mb-2 text-gray-700">Option 2: Bulk Add via Sheet</h3>
+        <label for="student_sheet" class="block text-gray-600 mb-1">Select spreadsheet file (CSV/Excel):</label>
+        <input type="file" id="student_sheet" name="student_sheet" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+               class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+        <p class="text-xs text-gray-500 mt-1">Upload a sheet with columns: student_name, prn, division, academic_year, [optional: roll_no, email, phone]. Department selected above will be used.</p>
+    </div>
+
+    <div>
+        <button type="submit"
+                class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+            Add Student(s)
+        </button>
+    </div>
+     <div class="mt-4 text-center">
+         <a href="{{ url_for('teacher.list_students') }}" class="text-gray-600 hover:underline text-sm">&larr; Cancel and return to Student List</a>
+     </div>
+</form>
+{% endblock %}

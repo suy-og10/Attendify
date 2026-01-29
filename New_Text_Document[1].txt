@@ -1,0 +1,28 @@
+INSERT INTO users (username, password_hash, full_name, role, is_active, email)
+VALUES ('admin', 'scrypt:32768:8:1$XWbvowbOMkLFeRya$111d7f43ba9cc078555a724ad5bae79d278072a9a9602ef076857d415ff6ed197108f2e35eb9c0d613b91229079e4a743fa31e30cc374b7f7b4cced26387f143', 'Administrator', 'Admin', 1, 'admin@gmail.com');
+
+
+from werkzeug.security import generate_password_hash
+# !! Replace 'your_secret_admin_password' with the actual password you want !!
+hashed_pw = generate_password_hash('your_secret_admin_password')
+print(hashed_pw)
+exit()
+
+
+INSERT INTO users (username, password_hash, full_name, role, is_active, email)
+VALUES ('admin', 'paste_the_hashed_password_here', 'Administrator', 'Admin', 1, 'admin@example.com');
+==============================================================
+
+To run 
+
+.\venv\Scripts\Activate.ps1
+
+.\venv\Scripts\python.exe -m pip install Flask openpyxl Werkzeug pandas numpy opencv-python scikit-learn insightface onnxruntime click
+
+$env:FLASK_APP = "backend.app"
+$env:FLASK_ENV = "development"
+
+.\venv\Scripts\python.exe -m flask init-db
+
+flask run --host=0.0.0.0
+
