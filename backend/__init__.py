@@ -10,12 +10,18 @@ def create_app(config_class=None):
     app = Flask(__name__,
                 template_folder=os.path.abspath('../frontend/templates'),
                 static_folder=os.path.abspath('../frontend/static'))
-    print(f"--- Static folder set to: {app.static_folder} ---")
     if config_class is None:
         from .config import Config
         app.config.from_object(Config)
     else:
         app.config.from_object(config_class)
+
+    if not app.config.get('SECRET_KEY'):
+        if app.config.get('DEBUG'):
+            app.config['SECRET_KEY'] = 'dev-only-secret-key'
+            app.logger.warning('SECRET_KEY not configured; using development fallback key.')
+        else:
+            raise RuntimeError('SECRET_KEY is required. Set SECRET_KEY environment variable.')
 
     try:
         os.makedirs(app.instance_path, exist_ok=True)
@@ -28,11 +34,9 @@ def create_app(config_class=None):
     from .auth.routes import auth_bp
     from .admin.routes import admin_bp
 
-    print("--- Importing HOD routes ---")
     from .hod.routes import hod_bp
     from .teacher.routes import teacher_bp
 
-    print("--- Registering HOD blueprint ---")
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(hod_bp, url_prefix='/hod')
@@ -157,14 +161,16 @@ def create_app(config_class=None):
                         }
                         t = threading.Thread(target=_worker, args=(session_id, meta), daemon=True)
                         t.start()
-            except Exception:
-                pass
+            except Exception as e:
+                app.logger.error(f"Auto-attendance scheduler loop error: {e}", exc_info=True)
             time.sleep(poll_interval)
 
     def start_auto_attendance_scheduler():
         enabled = bool(os.environ.get('AUTO_ATTENDANCE_ENABLED', '1') != '0')
         if not enabled:
+            app.logger.info("Auto-attendance scheduler disabled via AUTO_ATTENDANCE_ENABLED=0")
             return
+        app.logger.info("Starting auto-attendance scheduler thread")
         threading.Thread(target=_capture_for_first_5_minutes, args=(app,), daemon=True).start()
 
     start_auto_attendance_scheduler()

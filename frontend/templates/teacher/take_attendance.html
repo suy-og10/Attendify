@@ -45,6 +45,7 @@
                     <div id="recognition-results">
                         <p class="text-gray-500 text-sm">Recognized students will be marked present automatically.</p>
                     </div>
+                    <div id="api-alert" class="hidden mt-3 p-2 text-sm rounded border"></div>
                 </div>
             </div>
         </div>
@@ -136,7 +137,38 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Get Session ID from the URL path (e.g., /take/1 -> 1)
     const currentSessionId = window.location.pathname.split('/').pop();
+    const apiAlert = document.getElementById('api-alert');
     let stream = null; 
+
+    function showApiAlert(message, type = 'error') {
+        if (!apiAlert) return;
+        const colorClasses = type === 'warning'
+            ? 'bg-yellow-100 border-yellow-300 text-yellow-800'
+            : 'bg-red-100 border-red-300 text-red-800';
+        apiAlert.className = `mt-3 p-2 text-sm rounded border ${colorClasses}`;
+        apiAlert.textContent = message;
+    }
+
+    function hideApiAlert() {
+        if (!apiAlert) return;
+        apiAlert.className = 'hidden mt-3 p-2 text-sm rounded border';
+        apiAlert.textContent = '';
+    }
+
+    function handleAuthResponseError(response, payload) {
+        if (response.status === 401) {
+            showApiAlert('Your session expired. Redirecting to login...', 'warning');
+            setTimeout(() => {
+                window.location.href = "{{ url_for('auth.login') }}";
+            }, 1200);
+            return true;
+        }
+        if (response.status === 403) {
+            showApiAlert(payload?.error || 'You do not have permission for this action.');
+            return true;
+        }
+        return false;
+    }
 
     if (isNaN(parseInt(currentSessionId, 10))) {
         webcamStatusElement.textContent = 'ERROR: Invalid Session ID.';
@@ -169,6 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Recognition API Call ---
     async function sendImageForRecognition(imageDataUrl, verificationMethod = 'FACE_LIVE') {
         resultsDiv.innerHTML = '<p class="text-blue-500 animate-pulse">Recognizing...</p>';
+        hideApiAlert();
         
         try {
             const response = await fetch("{{ url_for('teacher.api_recognize_attendance') }}", { 
@@ -184,6 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await response.json();
 
             if (!response.ok) {
+                if (handleAuthResponseError(response, result)) return;
                 throw new Error(result.error || `Server error (Status: ${response.status})`);
             }
 
@@ -350,8 +384,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         status: newStatus
                     }),
                 })
-                .then(response => response.json())
-                .then(data => {
+                .then(async response => ({ response, data: await response.json() }))
+                .then(({ response, data }) => {
+                    if (!response.ok) {
+                        if (handleAuthResponseError(response, data)) {
+                            studentListDiv.querySelector(`[data-student-id="${studentId}"]`).querySelectorAll('button').forEach(btn => btn.disabled = false);
+                            return;
+                        }
+                        throw new Error(data.error || 'Manual marking failed.');
+                    }
                     if (data.success) {
                         const row = studentListDiv.querySelector(`[data-student-id="${studentId}"]`);
                         if (row) {
@@ -405,8 +446,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     session_id: currentSessionId
                 }),
             })
-            .then(response => response.json())
-            .then(data => {
+            .then(async response => ({ response, data: await response.json() }))
+            .then(({ response, data }) => {
+                if (!response.ok) {
+                    if (handleAuthResponseError(response, data)) {
+                        endSessionButton.disabled = false;
+                        endSessionButton.textContent = 'End & Finalize Session Attendance';
+                        return;
+                    }
+                    throw new Error(data.error || 'Failed to end session.');
+                }
                 if (data.success) {
                     alert(data.message);
                     // Redirect back to the session selection page

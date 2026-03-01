@@ -96,6 +96,7 @@
                 Capture & Save Embedding
             </button>
             <p id="capture-status" class="text-sm text-gray-600 mt-2 text-center"></p>
+            <div id="embed-api-alert" class="hidden mt-3 p-2 text-sm rounded border"></div>
         </div>
         <div class="text-gray-600 text-sm">
             <p>Position the student's face clearly in the frame.</p>
@@ -120,9 +121,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const context = canvasElement ? canvasElement.getContext('2d') : null;
     const captureButton = document.getElementById('capture-embedding-button');
     const statusElement = document.getElementById('capture-status');
+    const embedApiAlert = document.getElementById('embed-api-alert');
     const studentId = {{ student.student_id | tojson }}; // No extra {}
 
     let stream = null; // To hold the stream object
+
+    function showEmbedAlert(message, type = 'error') {
+        if (!embedApiAlert) return;
+        const colorClasses = type === 'warning'
+            ? 'bg-yellow-100 border-yellow-300 text-yellow-800'
+            : 'bg-red-100 border-red-300 text-red-800';
+        embedApiAlert.className = `mt-3 p-2 text-sm rounded border ${colorClasses}`;
+        embedApiAlert.textContent = message;
+    }
+
+    function hideEmbedAlert() {
+        if (!embedApiAlert) return;
+        embedApiAlert.className = 'hidden mt-3 p-2 text-sm rounded border';
+        embedApiAlert.textContent = '';
+    }
 
     async function setupWebcamCapture() {
         if (!videoElement || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -162,6 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
         captureButton.disabled = true;
         captureButton.textContent = 'Capturing...';
         statusElement.textContent = 'Processing...';
+        hideEmbedAlert();
         statusElement.className = 'text-sm text-blue-600 mt-2 text-center animate-pulse';
 
 
@@ -183,6 +201,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await response.json();
 
             if (!response.ok) {
+                if (response.status === 401) {
+                    showEmbedAlert('Your session expired. Redirecting to login...', 'warning');
+                    setTimeout(() => {
+                        window.location.href = "{{ url_for('auth.login') }}";
+                    }, 1200);
+                    return;
+                }
+                if (response.status === 403) {
+                    showEmbedAlert(result.error || 'You do not have permission for this student.');
+                    return;
+                }
                 throw new Error(result.error || `Server error: ${response.status}`);
             }
 

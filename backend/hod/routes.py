@@ -1,5 +1,4 @@
 # backend/hod/routes.py
-print("--- EXECUTING hod/routes.py ---")
 from flask import Blueprint, render_template, request, flash, redirect, url_for, g, session, current_app, send_file # Added current_app
 from backend.database import get_db, query_db, execute_db
 from backend.utils import login_required, role_required
@@ -8,7 +7,6 @@ from werkzeug.security import generate_password_hash
 from backend.teacher.reporting_logic import generate_attendance_excel
 
 hod_bp = Blueprint('hod', __name__, template_folder='../../frontend/templates/hod', url_prefix='/hod')
-print("--- hod_bp Blueprint CREATED ---")
 # In: backend/hod/routes.py
 
 # In: backend/hod/routes.py
@@ -17,7 +15,6 @@ print("--- hod_bp Blueprint CREATED ---")
 @login_required
 @role_required('HOD')
 def dashboard():
-    print("--- ENTERING HOD dashboard function ---")
     hod_dept_id = g.user.get('dept_id')
     
     # --- FIX: Added queries for department_name and teachers ---
@@ -44,7 +41,6 @@ def dashboard():
     
     # --- END OF FIX ---
     
-    print("--- Rendering hod/dashboard.html template ---")
     # Pass all required variables to the template
     return render_template(
         'hod/dashboard.html', 
