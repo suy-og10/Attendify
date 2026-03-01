@@ -395,7 +395,6 @@ def api_mark_manual():
     student_id = int(student_id_raw) if student_id_raw is not None else None
 
     status = request.json.get('status')
-    db = get_db() # Needed for connection info / rollback
 
     if not all([session_id, student_id, status]) or status not in ['Present', 'Absent', 'Late']:
         return jsonify({"error": "Invalid input"}), 400
@@ -404,6 +403,24 @@ def api_mark_manual():
     session_owner = query_db("SELECT cs.teacher_id FROM class_sessions csess JOIN class_schedules cs ON csess.schedule_id = cs.schedule_id WHERE csess.session_id = %s", (session_id,), one=True)
     if not session_owner or session_owner['teacher_id'] != session['user_id']:
          return jsonify({"error": "Permission denied"}), 403
+
+    student_in_roster = query_db(
+        """
+        SELECT s.student_id
+        FROM class_sessions csess
+        JOIN class_schedules cs ON csess.schedule_id = cs.schedule_id
+        JOIN subjects sub ON cs.subject_id = sub.subject_id
+        JOIN students s
+          ON s.division = cs.division
+         AND s.academic_year = cs.academic_year
+         AND s.dept_id = sub.dept_id
+        WHERE csess.session_id = %s AND s.student_id = %s AND s.is_active = TRUE
+        """,
+        (session_id, student_id),
+        one=True
+    )
+    if not student_in_roster:
+        return jsonify({"error": "Student is not part of this session roster"}), 403
 
     try:
         # Use execute_db with %s and MySQL's ON DUPLICATE KEY UPDATE
@@ -631,8 +648,14 @@ def api_capture_embedding():
     if not student_id or not base64_image:
         return jsonify({"error": "Missing student_id or image_data"}), 400
 
-    # Optional: Verify teacher permission for this student
-    # ...
+    teacher_dept_id = g.user.get('dept_id')
+    allowed_student = query_db(
+        "SELECT student_id FROM students WHERE student_id = %s AND is_active = TRUE AND dept_id = %s",
+        (student_id, teacher_dept_id),
+        one=True
+    )
+    if not allowed_student:
+        return jsonify({"error": "Permission denied for this student"}), 403
 
     img_np, decode_error = decode_image_from_base64(base64_image)
     if decode_error:
