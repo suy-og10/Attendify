@@ -1,6 +1,9 @@
 # backend/config.py
 import os
+from dotenv import load_dotenv
+
 rootdir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+load_dotenv(os.path.join(rootdir, '.env'))
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY')
