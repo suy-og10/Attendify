@@ -1,54 +1,120 @@
 {% extends "layout.html" %}
-{% block title %}View Attendance{% endblock %}
+{% block title %}Attendance Details — Attendify{% endblock %}
 
 {% block content %}
-<div class="flex justify-between items-center mb-6">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
     <div>
-        <h1 class="text-3xl font-bold text-gray-800">Attendance Details</h1>
+        <h1 class="text-2xl font-black text-gray-900 flex items-center gap-2">
+            <i class="fa-solid fa-list-check text-indigo-500"></i> Attendance Details
+        </h1>
         {% if session_info %}
-        <p class="text-gray-600">
-            {{ session_info.subject_name }} ({{ session_info.subject_code }}) - Div {{ session_info.division }}
-            | Date: {{ session_info.session_date }}
-            | Status: <span class="font-semibold">{{ session_info.status }}</span>
-        </p>
+        <div class="flex flex-wrap items-center gap-2 mt-2">
+            <span class="badge-info px-3 py-1 text-xs">
+                <i class="fa-solid fa-book mr-1"></i>{{ session_info.subject_name }} ({{ session_info.subject_code }})
+            </span>
+            <span class="badge-info px-3 py-1 text-xs">
+                <i class="fa-solid fa-users mr-1"></i>Div {{ session_info.division }}
+            </span>
+            <span class="badge-info px-3 py-1 text-xs">
+                <i class="fa-regular fa-calendar mr-1"></i>{{ session_info.session_date }}
+            </span>
+            {% if session_info.status == 'COMPLETED' %}
+            <span class="badge-success px-3 py-1 text-xs"><i class="fa-solid fa-circle-check mr-1"></i>Completed</span>
+            {% else %}
+            <span class="badge-warning px-3 py-1 text-xs">{{ session_info.status }}</span>
+            {% endif %}
+        </div>
         {% endif %}
     </div>
-    <a href="{{ url_for('teacher.select_session') }}" class="text-blue-600 hover:underline">&larr; Back to Sessions</a>
+    <a href="{{ url_for('teacher.select_session') }}"
+        class="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold py-2 px-4 rounded-xl transition-all self-start">
+        <i class="fa-solid fa-arrow-left"></i> Back to Sessions
+    </a>
 </div>
 
-<div class="bg-white p-6 rounded-lg shadow-md overflow-x-auto">
+<div class="section-card overflow-hidden">
     {% if records %}
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+
+    <!-- Stats row -->
+    {% set present_count = records | selectattr('status', 'equalto', 'Present') | list | length %}
+    {% set absent_count = records | selectattr('status', 'equalto', 'Absent') | list | length %}
+    <div class="grid grid-cols-3 gap-px bg-gray-100">
+        <div class="bg-white px-6 py-4 text-center">
+            <p class="text-2xl font-black text-gray-800">{{ records | length }}</p>
+            <p class="text-xs text-gray-400 font-medium mt-0.5">Total</p>
+        </div>
+        <div class="bg-white px-6 py-4 text-center">
+            <p class="text-2xl font-black text-emerald-600">{{ present_count }}</p>
+            <p class="text-xs text-gray-400 font-medium mt-0.5">Present</p>
+        </div>
+        <div class="bg-white px-6 py-4 text-center">
+            <p class="text-2xl font-black text-rose-500">{{ absent_count }}</p>
+            <p class="text-xs text-gray-400 font-medium mt-0.5">Absent</p>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="data-table min-w-full">
+            <thead>
                 <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PRN</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Confidence</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Marked Time</th>
-                    </tr>
+                    <th class="text-left px-5 py-3">PRN</th>
+                    <th class="text-left px-5 py-3">Name</th>
+                    <th class="text-left px-5 py-3">Status</th>
+                    <th class="text-left px-5 py-3">Method</th>
+                    <th class="text-left px-5 py-3">Confidence</th>
+                    <th class="text-left px-5 py-3">Marked At</th>
+                </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody>
                 {% for record in records %}
-                <tr data-student-id="{{ record.student_id }}">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-700">{{ record.prn }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ record.student_name }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold
-                        {% if record.status == 'Present' %}text-green-600{% elif record.status == 'Absent' %}text-red-600{% else %}text-yellow-600{% endif %}">
-                        {{ record.status }}
+                <tr>
+                    <td class="px-5 py-4">
+                        <span class="font-mono text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded">{{ record.prn
+                            }}</span>
                     </td>
-                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ record.verification_method }}</td>
-                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {{ '%.2f'|format(record.recognition_confidence) if record.recognition_confidence is not none else 'N/A' }}
-                     </td>
-                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ record.marked_time }}</td>
-                    </tr>
+                    <td class="px-5 py-4">
+                        <div class="flex items-center gap-2.5">
+                            <div
+                                class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0
+                                {% if record.status == 'Present' %}grad-emerald{% elif record.status == 'Absent' %}grad-rose{% else %}grad-amber{% endif %}">
+                                {{ record.student_name[0] | upper }}
+                            </div>
+                            <span class="font-semibold text-gray-900 text-sm">{{ record.student_name }}</span>
+                        </div>
+                    </td>
+                    <td class="px-5 py-4">
+                        {% if record.status == 'Present' %}
+                        <span class="badge-success"><i class="fa-solid fa-circle-check mr-1"></i>Present</span>
+                        {% elif record.status == 'Absent' %}
+                        <span class="badge-danger"><i class="fa-solid fa-circle-xmark mr-1"></i>Absent</span>
+                        {% else %}
+                        <span class="badge-warning">{{ record.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-5 py-4">
+                        <span class="text-xs text-gray-500 font-mono">{{ record.verification_method }}</span>
+                    </td>
+                    <td class="px-5 py-4 text-sm text-gray-500">
+                        {% if record.recognition_confidence is not none %}
+                        <span
+                            class="text-xs font-semibold {% if record.recognition_confidence > 0.7 %}text-emerald-600{% else %}text-amber-600{% endif %}">
+                            {{ '%.1f'|format(record.recognition_confidence * 100) }}%
+                        </span>
+                        {% else %}—{% endif %}
+                    </td>
+                    <td class="px-5 py-4 text-xs text-gray-400">{{ record.marked_time }}</td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
+    </div>
     {% else %}
-        <p class="text-gray-500">No attendance records found for this session.</p>
+    <div class="flex flex-col items-center text-center py-16">
+        <div class="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mb-3">
+            <i class="fa-solid fa-clipboard-question text-indigo-300 text-2xl"></i>
+        </div>
+        <p class="text-gray-500 text-sm font-medium">No attendance records for this session.</p>
+    </div>
     {% endif %}
 </div>
 {% endblock %}

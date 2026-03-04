@@ -1,52 +1,80 @@
 {% extends "layout.html" %}
-{% block title %}Manage Subjects{% endblock %}
+{% block title %}Manage Subjects — Attendify{% endblock %}
 
 {% block content %}
-<div class="flex justify-between items-center mb-6">
-    <h1 class="text-3xl font-bold text-gray-800">Manage Subjects</h1>
-    <a href="{{ url_for('hod.add_subject') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md inline-block">
-        + Add New Subject
-    </a>
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-black text-gray-900 flex items-center gap-2">
+            <i class="fa-solid fa-book text-indigo-500"></i> Manage Subjects
+        </h1>
+        <p class="text-sm text-gray-500 mt-0.5">Add or manage subjects for your department</p>
+    </div>
+    <div class="flex items-center gap-2">
+        <a href="{{ url_for('hod.dashboard') }}"
+            class="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold py-2 px-4 rounded-xl transition-all">
+            <i class="fa-solid fa-arrow-left"></i> Dashboard
+        </a>
+        <a href="{{ url_for('hod.add_subject') }}"
+            class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold py-2 px-4 rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all">
+            <i class="fa-solid fa-plus"></i> Add Subject
+        </a>
+    </div>
 </div>
 
-<div class="bg-white p-6 rounded-lg shadow-md overflow-x-auto">
+<div class="section-card overflow-hidden">
     {% if subjects %}
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+    <div class="overflow-x-auto">
+        <table class="data-table min-w-full">
+            <thead>
                 <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Semester</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th scope="col" class="relative px-6 py-3"><span class="sr-only">Actions</span></th>
+                    <th class="text-left px-6 py-3">Code</th>
+                    <th class="text-left px-6 py-3">Subject Name</th>
+                    <th class="text-left px-6 py-3">Semester</th>
+                    <th class="text-left px-6 py-3">Status</th>
+                    <th class="text-right px-6 py-3">Actions</th>
                 </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody>
                 {% for subject in subjects %}
                 <tr>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-700">{{ subject.subject_code }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ subject.subject_name }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ subject.semester }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                    <td class="px-6 py-4">
+                        <span
+                            class="font-mono text-xs text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg font-semibold">{{
+                            subject.subject_code }}</span>
+                    </td>
+                    <td class="px-6 py-4 font-semibold text-gray-900 text-sm">{{ subject.subject_name }}</td>
+                    <td class="px-6 py-4">
+                        <span class="badge-info">Sem {{ subject.semester }}</span>
+                    </td>
+                    <td class="px-6 py-4">
                         {% if subject.is_active %}
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                        <span class="badge-success">Active</span>
                         {% else %}
-                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactive</span>
+                        <span class="badge-danger">Inactive</span>
                         {% endif %}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <a href="#" class="text-indigo-600 hover:text-indigo-900">Edit</a>
-                        {# Add Deactivate/Activate logic here #}
+                    <td class="px-6 py-4 text-right">
+                        <a href="#"
+                            class="w-8 h-8 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-600 inline-flex items-center justify-center transition-colors">
+                            <i class="fa-solid fa-pen-to-square text-xs"></i>
+                        </a>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+    </div>
     {% else %}
-        <p class="text-gray-500">No subjects found for your department yet.</p>
+    <div class="flex flex-col items-center text-center py-16">
+        <div class="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mb-4">
+            <i class="fa-solid fa-book text-indigo-300 text-3xl"></i>
+        </div>
+        <h3 class="text-gray-700 font-semibold mb-1">No subjects yet</h3>
+        <p class="text-gray-400 text-sm mb-4">Add your department's first subject.</p>
+        <a href="{{ url_for('hod.add_subject') }}" class="btn-primary text-sm">
+            <i class="fa-solid fa-plus mr-2"></i>Add Subject
+        </a>
+    </div>
     {% endif %}
-     <div class="mt-6">
-         <a href="{{ url_for('hod.dashboard') }}" class="text-gray-600 hover:underline text-sm">&larr; Back to Dashboard</a>
-     </div>
 </div>
 {% endblock %}

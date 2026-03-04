@@ -1,53 +1,93 @@
 {% extends "layout.html" %}
-{% block title %}Select Session{% endblock %}
+{% block title %}Select Session — Attendify{% endblock %}
 
 {% block content %}
-<h1 class="text-3xl font-bold mb-6 text-gray-800">Select Session for Attendance</h1>
-<p class="mb-4 text-gray-600">Today's Date: {{ today_date }}</p>
+<!-- Header -->
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-black text-gray-900 flex items-center gap-2">
+            <i class="fa-solid fa-calendar-check text-indigo-500"></i> Take Attendance
+        </h1>
+        <p class="text-sm text-gray-500 mt-0.5 flex items-center gap-1.5">
+            <i class="fa-regular fa-calendar text-gray-400"></i>
+            Today: <span class="font-semibold text-gray-700">{{ today_date }}</span>
+        </p>
+    </div>
+    <a href="{{ url_for('teacher.dashboard') }}"
+        class="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold py-2 px-4 rounded-xl transition-all">
+        <i class="fa-solid fa-arrow-left"></i> Dashboard
+    </a>
+</div>
 
-<div class="bg-white p-6 rounded-lg shadow-md">
-    <h2 class="text-xl font-semibold mb-4 text-gray-700">Your Scheduled Classes Today</h2>
+<div class="section-card">
+    <div class="flex items-center gap-3 px-6 pt-6 pb-4 border-b border-gray-100">
+        <div class="w-10 h-10 grad-primary rounded-xl flex items-center justify-center shadow">
+            <i class="fa-solid fa-chalkboard text-white text-base"></i>
+        </div>
+        <div>
+            <h2 class="text-base font-bold text-gray-900">Today's Scheduled Classes</h2>
+            <p class="text-xs text-gray-500">Select a class to start or continue attendance</p>
+        </div>
+    </div>
+
     {% if schedules %}
-        <ul class="divide-y divide-gray-200">
-            {% for schedule in schedules %}
-            <li class="py-3 flex justify-between items-center">
-                <div>
-                    <p class="font-medium text-gray-800">
-                        {{ schedule.subject_name }} ({{ schedule.subject_code }}) - Div {{ schedule.division }}
-                    </p>
-                    <p class="text-sm text-gray-500">
-                        Time: {{ schedule.start_time }} - {{ schedule.end_time }} | Year: {{ schedule.academic_year }}
-                    </p>
+    <div class="divide-y divide-gray-50">
+        {% for schedule in schedules %}
+        {% set session_info = sessions_today.get(schedule.schedule_id) %}
+        <div
+            class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-6 py-5 hover:bg-indigo-50/40 transition-colors">
+            <div class="flex items-center gap-4">
+                <!-- Time chip -->
+                <div class="flex-shrink-0 text-center bg-indigo-100 rounded-xl px-3 py-2 min-w-[70px]">
+                    <p class="text-indigo-700 text-xs font-black">{{ schedule.start_time }}</p>
+                    <p class="text-indigo-400 text-xs">–{{ schedule.end_time }}</p>
                 </div>
                 <div>
-                    {% set session_info = sessions_today.get(schedule.schedule_id) %}
-                    {% if session_info %}
-                        {% if session_info.status == 'ONGOING' or session_info.status == 'SCHEDULED' %}
-                             <a href="{{ url_for('teacher.take_attendance_page', session_id=session_info.session_id) }}" class="bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-semibold py-1 px-3 rounded-md">
-                                Continue Session
-                            </a>
-                        {% elif session_info.status == 'COMPLETED' %}
-                             <a href="{{ url_for('teacher.view_attendance', session_id=session_info.session_id) }}" class="bg-gray-400 hover:bg-gray-500 text-white text-sm font-semibold py-1 px-3 rounded-md">
-                                View Completed
-                            </a>
-                        {% else %}
-                             <span class="text-sm text-red-500">Cancelled</span>
-                        {% endif %}
-                    {% else %}
-                        <form action="{{ url_for('teacher.start_session') }}" method="POST">
-                            <input type="hidden" name="schedule_id" value="{{ schedule.schedule_id }}">
-                            <input type="hidden" name="session_date" value="{{ today_date }}">
-                            <button type="submit" class="bg-green-500 hover:bg-green-600 text-white text-sm font-semibold py-1 px-3 rounded-md">
-                                Start Session
-                            </button>
-                        </form>
-                    {% endif %}
+                    <p class="font-bold text-gray-900 text-sm">{{ schedule.subject_name }}</p>
+                    <div class="flex items-center flex-wrap gap-1.5 mt-1">
+                        <span class="badge-info text-xs">{{ schedule.subject_code }}</span>
+                        <span class="badge-info text-xs">Div {{ schedule.division }}</span>
+                        <span class="text-xs text-gray-400">{{ schedule.academic_year }}</span>
+                    </div>
                 </div>
-            </li>
-            {% endfor %}
-        </ul>
+            </div>
+            <div class="flex-shrink-0">
+                {% if session_info %}
+                {% if session_info.status in ('ONGOING', 'SCHEDULED') %}
+                <a href="{{ url_for('teacher.take_attendance_page', session_id=session_info.session_id) }}"
+                    class="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-2 px-4 rounded-lg transition-all hover:-translate-y-0.5 shadow-sm">
+                    <i class="fa-solid fa-circle-play"></i> Continue Session
+                </a>
+                {% elif session_info.status == 'COMPLETED' %}
+                <a href="{{ url_for('teacher.view_attendance', session_id=session_info.session_id) }}"
+                    class="inline-flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-bold py-2 px-4 rounded-lg transition-all">
+                    <i class="fa-solid fa-circle-check text-emerald-500"></i> View Completed
+                </a>
+                {% else %}
+                <span class="badge-danger">Cancelled</span>
+                {% endif %}
+                {% else %}
+                <form action="{{ url_for('teacher.start_session') }}" method="POST" class="inline">
+                    <input type="hidden" name="schedule_id" value="{{ schedule.schedule_id }}">
+                    <input type="hidden" name="session_date" value="{{ today_date }}">
+                    <button type="submit"
+                        class="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold py-2 px-4 rounded-lg transition-all hover:-translate-y-0.5 shadow-sm">
+                        <i class="fa-solid fa-play"></i> Start Session
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
     {% else %}
-        <p class="text-gray-500">You have no scheduled classes for today.</p>
+    <div class="flex flex-col items-center text-center py-16">
+        <div class="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mb-4">
+            <i class="fa-solid fa-calendar-xmark text-indigo-300 text-3xl"></i>
+        </div>
+        <h3 class="text-gray-700 font-semibold mb-1">No classes scheduled today</h3>
+        <p class="text-gray-400 text-sm">Contact your HOD to update your schedule.</p>
+    </div>
     {% endif %}
 </div>
 {% endblock %}

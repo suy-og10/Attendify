@@ -1,54 +1,136 @@
 {% extends "layout.html" %}
-{% block title %}Teacher Dashboard{% endblock %}
+{% block title %}Teacher Dashboard — Attendify{% endblock %}
 
 {% block content %}
-<h1 class="text-3xl font-bold mb-6 text-gray-800">Teacher Dashboard</h1>
-<p class="mb-4 text-gray-600">Welcome, {{ g.user.full_name }}!</p>
+<!-- Header -->
+<div class="animated-gradient rounded-2xl p-7 mb-7 relative overflow-hidden shadow-xl shimmer">
+    <div class="absolute top-0 right-0 w-56 h-56 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4">
+    </div>
+    <div class="absolute bottom-0 left-40 w-36 h-36 bg-purple-300/20 rounded-full blur-2xl translate-y-1/2"></div>
+    <div class="relative z-10 flex items-center gap-4">
+        <div class="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-chalkboard-user text-white text-2xl"></i>
+        </div>
+        <div>
+            <h1 class="text-2xl font-black text-white">Teacher Dashboard</h1>
+            <p class="text-purple-200 text-sm mt-0.5">
+                Welcome back, <span class="font-semibold text-white">{{ g.user.full_name }}</span>
+            </p>
+        </div>
+    </div>
+</div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-    <a href="{{ url_for('teacher.select_session') }}" class="block bg-blue-500 hover:bg-blue-600 text-white p-6 rounded-lg shadow-md text-center transition duration-150 ease-in-out">
-        <h2 class="text-xl font-semibold mb-2">Take Attendance</h2>
-        <p>Start a new session or mark attendance for today's classes.</p>
+<!-- Action Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-7">
+    <a href="{{ url_for('teacher.select_session') }}"
+        class="section-card p-7 card-hover flex flex-col items-start gap-4 relative overflow-hidden group">
+        <div class="absolute inset-0 grad-primary opacity-0 group-hover:opacity-5 transition-opacity"></div>
+        <div class="w-14 h-14 grad-primary rounded-2xl flex items-center justify-center shadow-lg">
+            <i class="fa-solid fa-camera text-white text-2xl"></i>
+        </div>
+        <div>
+            <h3 class="font-bold text-gray-900 text-base mb-1.5">Take Attendance</h3>
+            <p class="text-xs text-gray-500 leading-relaxed">Start a new session or mark attendance using face
+                recognition.</p>
+        </div>
+        <span class="inline-flex items-center gap-1.5 text-indigo-600 text-sm font-bold mt-auto">
+            Start <i class="fa-solid fa-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i>
+        </span>
     </a>
-    <a href="{{ url_for('teacher.list_students') }}" class="block bg-green-500 hover:bg-green-600 text-white p-6 rounded-lg shadow-md text-center transition duration-150 ease-in-out">
-        <h2 class="text-xl font-semibold mb-2">Manage Students</h2>
-        <p>View, add, or edit student details and face data.</p>
+    <a href="{{ url_for('teacher.list_students') }}"
+        class="section-card p-7 card-hover flex flex-col items-start gap-4 relative overflow-hidden group">
+        <div class="absolute inset-0 grad-emerald opacity-0 group-hover:opacity-5 transition-opacity"></div>
+        <div class="w-14 h-14 grad-emerald rounded-2xl flex items-center justify-center shadow-lg">
+            <i class="fa-solid fa-users text-white text-2xl"></i>
+        </div>
+        <div>
+            <h3 class="font-bold text-gray-900 text-base mb-1.5">Manage Students</h3>
+            <p class="text-xs text-gray-500 leading-relaxed">View, add, or update student details and facial recognition
+                data.</p>
+        </div>
+        <span class="inline-flex items-center gap-1.5 text-emerald-600 text-sm font-bold mt-auto">
+            View <i class="fa-solid fa-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i>
+        </span>
     </a>
-    <a href="{{ url_for('teacher.attendance_report') }}" class="block bg-indigo-500 hover:bg-indigo-600 text-white p-6 rounded-lg shadow-md text-center transition duration-150 ease-in-out">
-        <h2 class="text-xl font-semibold mb-2">Generate Reports</h2>
-        <p>Create attendance reports for your subjects.</p>
+    <a href="{{ url_for('teacher.attendance_report') }}"
+        class="section-card p-7 card-hover flex flex-col items-start gap-4 relative overflow-hidden group">
+        <div class="absolute inset-0 grad-sky opacity-0 group-hover:opacity-5 transition-opacity"></div>
+        <div class="w-14 h-14 grad-sky rounded-2xl flex items-center justify-center shadow-lg">
+            <i class="fa-solid fa-chart-column text-white text-2xl"></i>
+        </div>
+        <div>
+            <h3 class="font-bold text-gray-900 text-base mb-1.5">Generate Reports</h3>
+            <p class="text-xs text-gray-500 leading-relaxed">Create detailed attendance reports for your assigned
+                subjects.</p>
+        </div>
+        <span class="inline-flex items-center gap-1.5 text-sky-600 text-sm font-bold mt-auto">
+            Reports <i class="fa-solid fa-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i>
+        </span>
     </a>
 </div>
 
-
-<div class="bg-white p-6 rounded-lg shadow-md">
-    <h2 class="text-xl font-semibold mb-4 text-gray-700">Your Assigned Schedules</h2>
-    {% if schedules %}
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Division</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Day</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    {% set days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] %}
-                    {% for schedule in schedules %}
-                    <tr>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ schedule.subject_name }} ({{ schedule.subject_code }})</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ schedule.division }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ days[schedule.day_of_week] }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ schedule.start_time }} - {{ schedule.end_time }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+<!-- Schedules Table -->
+<div class="section-card">
+    <div class="flex items-center gap-3 px-6 pt-6 pb-4 border-b border-gray-100">
+        <div class="w-10 h-10 grad-primary rounded-xl flex items-center justify-center shadow">
+            <i class="fa-solid fa-calendar-days text-white text-base"></i>
         </div>
+        <div>
+            <h2 class="text-base font-bold text-gray-900">Your Assigned Schedules</h2>
+            <p class="text-xs text-gray-500">Classes assigned to you this semester</p>
+        </div>
+    </div>
+
+    {% if schedules %}
+    {% set days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] %}
+    {% set day_colors = ['bg-indigo-100 text-indigo-700', 'bg-purple-100 text-purple-700', 'bg-sky-100 text-sky-700',
+    'bg-emerald-100 text-emerald-700', 'bg-amber-100 text-amber-700', 'bg-rose-100 text-rose-700', 'bg-gray-100
+    text-gray-700'] %}
+    <div class="overflow-x-auto">
+        <table class="data-table min-w-full">
+            <thead>
+                <tr>
+                    <th class="text-left px-6 py-3">Subject</th>
+                    <th class="text-left px-6 py-3">Division</th>
+                    <th class="text-left px-6 py-3">Day</th>
+                    <th class="text-left px-6 py-3">Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for schedule in schedules %}
+                <tr>
+                    <td class="px-6 py-4">
+                        <p class="font-semibold text-gray-900 text-sm">{{ schedule.subject_name }}</p>
+                        <p class="text-xs text-gray-400 font-mono">{{ schedule.subject_code }}</p>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="badge-info">{{ schedule.division }}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span
+                            class="text-xs font-semibold px-2.5 py-1 rounded-full {{ day_colors[schedule.day_of_week] }}">
+                            {{ days[schedule.day_of_week] }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-1.5 text-sm text-gray-600">
+                            <i class="fa-regular fa-clock text-gray-400 text-xs"></i>
+                            {{ schedule.start_time }} – {{ schedule.end_time }}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
     {% else %}
-        <p class="text-gray-500">You currently have no active schedules assigned.</p>
+    <div class="flex flex-col items-center text-center py-12">
+        <div class="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mb-3">
+            <i class="fa-solid fa-calendar-xmark text-indigo-300 text-2xl"></i>
+        </div>
+        <p class="text-gray-500 text-sm font-medium">No active schedules assigned yet.</p>
+        <p class="text-xs text-gray-400 mt-1">Contact your HOD to get scheduled.</p>
+    </div>
     {% endif %}
 </div>
 {% endblock %}

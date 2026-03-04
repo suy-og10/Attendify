@@ -1,50 +1,125 @@
 {% extends "layout.html" %}
-{% block title %}Admin Dashboard{% endblock %}
+{% block title %}Admin Dashboard — Attendify{% endblock %}
 
 {% block content %}
-<h1 class="text-3xl font-bold mb-6 text-gray-800">Admin Dashboard</h1>
-<p class="mb-4 text-gray-600">Welcome, {{ g.user.full_name }}!</p>
+<!-- Header -->
+<div class="animated-gradient rounded-2xl p-7 mb-7 relative overflow-hidden shadow-xl shimmer">
+    <div class="absolute top-0 right-0 w-56 h-56 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4">
+    </div>
+    <div class="relative z-10 flex items-center gap-4">
+        <div class="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-shield-halved text-white text-2xl"></i>
+        </div>
+        <div>
+            <h1 class="text-2xl font-black text-white">Admin Dashboard</h1>
+            <p class="text-purple-200 text-sm mt-0.5">Welcome back, <span class="font-semibold text-white">{{
+                    g.user.full_name }}</span></p>
+        </div>
+    </div>
+</div>
 
-<div class="bg-white p-6 rounded-lg shadow-md mb-6">
-    <h2 class="text-xl font-semibold mb-4 text-gray-700">Pending HOD Approvals</h2>
+<!-- Pending HOD Approvals -->
+<div class="section-card p-6 mb-6">
+    <div class="flex items-center gap-3 mb-5">
+        <div class="w-10 h-10 grad-amber rounded-xl flex items-center justify-center shadow">
+            <i class="fa-solid fa-user-clock text-white text-base"></i>
+        </div>
+        <div>
+            <h2 class="text-base font-bold text-gray-900">Pending HOD Approvals</h2>
+            <p class="text-xs text-gray-500">Review and approve or reject registration requests</p>
+        </div>
+        {% if pending_hods %}
+        <span class="ml-auto badge-warning text-sm">{{ pending_hods | length }} Pending</span>
+        {% endif %}
+    </div>
+
     {% if pending_hods %}
-        <ul class="divide-y divide-gray-200">
-            {% for hod in pending_hods %}
-            <li class="py-3 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
-                {# HOD Info #}
+    <div class="space-y-3">
+        {% for hod in pending_hods %}
+        <div
+            class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-amber-50 border border-amber-100 rounded-xl">
+            <div class="flex items-center gap-3">
+                <!-- Avatar Initials -->
+                <div
+                    class="w-11 h-11 rounded-full grad-amber flex items-center justify-center text-white font-bold text-base flex-shrink-0 shadow">
+                    {{ hod.full_name[0] | upper }}
+                </div>
                 <div>
-                    <p class="font-medium text-gray-800">{{ hod.full_name }} ({{ hod.username }})</p>
-                    <p class="text-sm text-gray-500">{{ hod.email if hod.email else 'No Email' }}</p>
+                    <p class="font-semibold text-gray-900 text-sm">{{ hod.full_name }} <span
+                            class="text-gray-400 font-normal">({{ hod.username }})</span></p>
+                    <p class="text-xs text-gray-500">{{ hod.email if hod.email else 'No email provided' }}</p>
                 </div>
-                {# Action Buttons #}
-                <div class="flex space-x-2">
-                    {# Approve Form #}
-                    <form action="{{ url_for('admin.approve_hod', user_id=hod.user_id) }}" method="POST" class="inline">
-                        <button type="submit" class="bg-green-500 hover:bg-green-600 text-white text-xs font-semibold py-1 px-3 rounded-md transition duration-150">
-                            Approve
-                        </button>
-                    </form>
-                    {# Reject Form (NEW) #}
-                    <form action="{{ url_for('admin.reject_hod', user_id=hod.user_id) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to reject this HOD registration?');">
-                        <button type="submit" class="bg-red-500 hover:bg-red-600 text-white text-xs font-semibold py-1 px-3 rounded-md transition duration-150">
-                            Reject
-                        </button>
-                    </form>
-                </div>
-            </li>
-            {% endfor %}
-        </ul>
+            </div>
+            <div class="flex gap-2 flex-shrink-0">
+                <form action="{{ url_for('admin.approve_hod', user_id=hod.user_id) }}" method="POST" class="inline">
+                    <button type="submit"
+                        class="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold py-2 px-4 rounded-lg transition-all hover:-translate-y-0.5 shadow-sm">
+                        <i class="fa-solid fa-check"></i> Approve
+                    </button>
+                </form>
+                <form action="{{ url_for('admin.reject_hod', user_id=hod.user_id) }}" method="POST" class="inline"
+                    onsubmit="return confirm('Reject this HOD registration?');">
+                    <button type="submit"
+                        class="inline-flex items-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold py-2 px-4 rounded-lg transition-all hover:-translate-y-0.5 shadow-sm">
+                        <i class="fa-solid fa-xmark"></i> Reject
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
     {% else %}
-        <p class="text-gray-500">No pending HOD approvals.</p>
+    <div class="flex flex-col items-center text-center py-10">
+        <div class="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mb-3">
+            <i class="fa-solid fa-circle-check text-emerald-400 text-2xl"></i>
+        </div>
+        <p class="text-gray-500 text-sm font-medium">All caught up! No pending approvals.</p>
+    </div>
     {% endif %}
 </div>
 
-<div class="bg-white p-6 rounded-lg shadow-md">
-    <h2 class="text-xl font-semibold mb-4 text-gray-700">Management Links</h2>
-    <ul class="list-disc list-inside space-y-2">
-        <li><a href="#" class="text-blue-600 hover:underline">Manage Departments</a></li>
-        <li><a href="#" class="text-blue-600 hover:underline">Manage All Users (HODs, Teachers)</a></li>
-        <li><a href="#" class="text-blue-600 hover:underline">System Settings</a></li>
-    </ul>
+<!-- Management Cards -->
+<div class="section-card p-6">
+    <div class="flex items-center gap-3 mb-5">
+        <div class="w-10 h-10 grad-primary rounded-xl flex items-center justify-center shadow">
+            <i class="fa-solid fa-gears text-white text-base"></i>
+        </div>
+        <h2 class="text-base font-bold text-gray-900">System Management</h2>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <a href="#"
+            class="flex items-center gap-3 p-4 rounded-xl border-2 border-dashed border-indigo-200 hover:border-indigo-400 hover:bg-indigo-50 transition-all group">
+            <div
+                class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center group-hover:bg-indigo-200 transition-colors">
+                <i class="fa-solid fa-building-columns text-indigo-600"></i>
+            </div>
+            <div>
+                <p class="font-semibold text-sm text-gray-800">Departments</p>
+                <p class="text-xs text-gray-400">Manage all depts</p>
+            </div>
+        </a>
+        <a href="#"
+            class="flex items-center gap-3 p-4 rounded-xl border-2 border-dashed border-purple-200 hover:border-purple-400 hover:bg-purple-50 transition-all group">
+            <div
+                class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                <i class="fa-solid fa-users text-purple-600"></i>
+            </div>
+            <div>
+                <p class="font-semibold text-sm text-gray-800">All Users</p>
+                <p class="text-xs text-gray-400">HODs &amp; Teachers</p>
+            </div>
+        </a>
+        <a href="#"
+            class="flex items-center gap-3 p-4 rounded-xl border-2 border-dashed border-sky-200 hover:border-sky-400 hover:bg-sky-50 transition-all group">
+            <div
+                class="w-10 h-10 bg-sky-100 rounded-lg flex items-center justify-center group-hover:bg-sky-200 transition-colors">
+                <i class="fa-solid fa-sliders text-sky-600"></i>
+            </div>
+            <div>
+                <p class="font-semibold text-sm text-gray-800">Settings</p>
+                <p class="text-xs text-gray-400">System config</p>
+            </div>
+        </a>
+    </div>
 </div>
 {% endblock %}

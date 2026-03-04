@@ -1,68 +1,134 @@
 {% extends "layout.html" %}
-{% block title %}HOD Dashboard{% endblock %}
+{% block title %}HOD Dashboard — Attendify{% endblock %}
 
 {% block content %}
-<h1 class="text-3xl font-bold mb-6 text-gray-800">HOD Dashboard</h1>
-<p class="mb-4 text-gray-600">Welcome, {{ g.user.full_name }} Department {{ department_name }}!</p>
-
-    <h2 class="text-xl font-semibold mb-4 text-gray-700">Manage Teachers</h2>
-    <div class="mb-4">
-        <a href="{{ url_for('hod.add_teacher') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-md text-sm">
-             + Add Teacher
-         </a>
+<!-- Header -->
+<div class="animated-gradient rounded-2xl p-7 mb-7 relative overflow-hidden shadow-xl shimmer">
+    <div class="absolute top-0 right-0 w-56 h-56 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4">
     </div>
+    <div class="absolute bottom-0 left-1/3 w-40 h-40 bg-purple-300/20 rounded-full blur-2xl translate-y-1/2"></div>
+    <div class="relative z-10 flex items-center gap-4">
+        <div class="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-building-columns text-white text-2xl"></i>
+        </div>
+        <div>
+            <h1 class="text-2xl font-black text-white">HOD Dashboard</h1>
+            <p class="text-purple-200 text-sm mt-0.5">
+                Welcome, <span class="font-semibold text-white">{{ g.user.full_name }}</span>
+                &mdash; <span class="text-purple-200">{{ department_name }}</span>
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Department Management Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-7">
+    <a href="{{ url_for('hod.manage_subjects') }}" class="section-card p-6 card-hover flex items-start gap-4">
+        <div class="w-12 h-12 grad-primary rounded-xl flex items-center justify-center flex-shrink-0 shadow-md">
+            <i class="fa-solid fa-book text-white text-lg"></i>
+        </div>
+        <div>
+            <h3 class="font-bold text-gray-900 text-sm mb-1">Manage Subjects</h3>
+            <p class="text-xs text-gray-500 leading-relaxed">Add new subjects or edit existing ones for your department.
+            </p>
+            <span class="mt-2 inline-flex items-center gap-1 text-indigo-600 text-xs font-semibold">Open <i
+                    class="fa-solid fa-arrow-right text-xs"></i></span>
+        </div>
+    </a>
+    <a href="{{ url_for('hod.manage_schedules') }}" class="section-card p-6 card-hover flex items-start gap-4">
+        <div class="w-12 h-12 grad-emerald rounded-xl flex items-center justify-center flex-shrink-0 shadow-md">
+            <i class="fa-solid fa-calendar-week text-white text-lg"></i>
+        </div>
+        <div>
+            <h3 class="font-bold text-gray-900 text-sm mb-1">Class Schedules</h3>
+            <p class="text-xs text-gray-500 leading-relaxed">Assign subjects to teachers and set the weekly timetable.
+            </p>
+            <span class="mt-2 inline-flex items-center gap-1 text-emerald-600 text-xs font-semibold">Open <i
+                    class="fa-solid fa-arrow-right text-xs"></i></span>
+        </div>
+    </a>
+    <a href="{{ url_for('hod.department_report') }}" class="section-card p-6 card-hover flex items-start gap-4">
+        <div class="w-12 h-12 grad-sky rounded-xl flex items-center justify-center flex-shrink-0 shadow-md">
+            <i class="fa-solid fa-chart-bar text-white text-lg"></i>
+        </div>
+        <div>
+            <h3 class="font-bold text-gray-900 text-sm mb-1">Department Reports</h3>
+            <p class="text-xs text-gray-500 leading-relaxed">Generate attendance reports for any class in your
+                department.</p>
+            <span class="mt-2 inline-flex items-center gap-1 text-sky-600 text-xs font-semibold">Open <i
+                    class="fa-solid fa-arrow-right text-xs"></i></span>
+        </div>
+    </a>
+</div>
+
+<!-- Teachers Section -->
+<div class="section-card">
+    <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 grad-primary rounded-xl flex items-center justify-center shadow">
+                <i class="fa-solid fa-chalkboard-user text-white text-base"></i>
+            </div>
+            <div>
+                <h2 class="text-base font-bold text-gray-900">Teachers</h2>
+                <p class="text-xs text-gray-500">Your department faculty</p>
+            </div>
+        </div>
+        <a href="{{ url_for('hod.add_teacher') }}"
+            class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 px-4 rounded-lg transition-all hover:-translate-y-0.5 shadow-sm">
+            <i class="fa-solid fa-plus"></i> Add Teacher
+        </a>
+    </div>
+
     {% if teachers %}
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+    <div class="overflow-x-auto">
+        <table class="data-table min-w-full">
+            <thead>
                 <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th scope="col" class="relative px-6 py-3"><span class="sr-only">Actions</span></th>
+                    <th class="text-left px-6 py-3 first:rounded-tl-none">Name</th>
+                    <th class="text-left px-6 py-3">Email</th>
+                    <th class="text-left px-6 py-3">Status</th>
+                    <th class="text-right px-6 py-3">Actions</th>
                 </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody class="bg-white divide-y divide-gray-50">
                 {% for teacher in teachers %}
                 <tr>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ teacher.full_name }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ teacher.email }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="w-9 h-9 grad-primary rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                                {{ teacher.full_name[0] | upper }}
+                            </div>
+                            <span class="font-semibold text-gray-900 text-sm">{{ teacher.full_name }}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">{{ teacher.email if teacher.email else '—' }}</td>
+                    <td class="px-6 py-4">
                         {% if teacher.is_active %}
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                        <span class="badge-success">Active</span>
                         {% else %}
-                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactive</span>
+                        <span class="badge-danger">Inactive</span>
                         {% endif %}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <a href="#" class="text-indigo-600 hover:text-indigo-900">Edit</a>
-                        </td>
+                    <td class="px-6 py-4 text-right">
+                        <a href="#" class="text-indigo-500 hover:text-indigo-700 text-sm font-semibold">
+                            <i class="fa-solid fa-pen-to-square mr-1"></i>Edit
+                        </a>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-    {% else %}
-        <p class="text-gray-500">No teachers found in your department.</p>
-    {% endif %}
-</div>
-
-<div class="mb-8">
-    <h2 class="text-2xl font-semibold text-gray-700 mb-4">Department Management</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        
-        <a href="{{ url_for('hod.manage_subjects') }}" class="block p-6 bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out border-l-4 border-blue-500">
-            <h2 class="text-xl font-semibold text-gray-800 mb-2">Manage Subjects</h2>
-            <p class="text-gray-600">Add new subjects or edit existing ones for your department.</p>
-        </a>
-        
-        <a href="{{ url_for('hod.manage_schedules') }}" class="block p-6 bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out border-l-4 border-green-500">
-            <h2 class="text-xl font-semibold text-gray-800 mb-2">Manage Class Schedules</h2>
-            <p class="text-gray-600">Assign subjects to teachers and set the weekly timetable.</p>
-        </a>
-        
-        <a href="{{ url_for('hod.department_report') }}" class="block p-6 bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out border-l-4 border-purple-500">
-            <h2 class="text-xl font-semibold text-gray-800 mb-2">Department Reports</h2>
-            <p class="text-gray-600">Generate attendance reports for any class in your department.</p>
-        </a>
     </div>
+    {% else %}
+    <div class="flex flex-col items-center text-center py-12">
+        <div class="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mb-3">
+            <i class="fa-solid fa-user-slash text-indigo-300 text-2xl"></i>
+        </div>
+        <p class="text-gray-500 text-sm font-medium">No teachers found in your department.</p>
+        <a href="{{ url_for('hod.add_teacher') }}"
+            class="mt-3 text-indigo-600 hover:underline text-sm font-semibold">Add your first teacher →</a>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

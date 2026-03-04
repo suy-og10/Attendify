@@ -1,61 +1,106 @@
 {% extends "layout.html" %}
-{% block title %}Student List{% endblock %}
+{% block title %}Student List — Attendify{% endblock %}
 
 {% block content %}
-<div class="flex justify-between items-center mb-6">
-    <h1 class="text-3xl font-bold text-gray-800">Student List (Total: {{ students|length }})</h1>
-    <a href="{{ url_for('teacher.add_student') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md inline-block">
-        Add New Student(s)
+<!-- Header -->
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-black text-gray-900 flex items-center gap-2">
+            <i class="fa-solid fa-users text-indigo-500"></i>
+            Student List
+        </h1>
+        <p class="text-sm text-gray-500 mt-0.5">Total <span class="font-semibold text-indigo-600">{{ students|length
+                }}</span> students enrolled</p>
+    </div>
+    <a href="{{ url_for('teacher.add_student') }}"
+        class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold py-2.5 px-5 rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all">
+        <i class="fa-solid fa-user-plus"></i> Add Student(s)
     </a>
 </div>
 
-<div class="bg-white p-6 rounded-lg shadow-md overflow-x-auto">
+<div class="section-card overflow-hidden">
     {% if students %}
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+    <div class="overflow-x-auto">
+        <table class="data-table min-w-full">
+            <thead>
                 <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sr. No.</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PRN</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Roll No</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Division</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dept</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Face Data</th>
-                    <th scope="col" class="relative px-6 py-3"><span class="sr-only">Actions</span></th>
+                    <th class="text-left px-5 py-3">#</th>
+                    <th class="text-left px-5 py-3">PRN</th>
+                    <th class="text-left px-5 py-3">Name</th>
+                    <th class="text-left px-5 py-3">Roll No</th>
+                    <th class="text-left px-5 py-3">Division</th>
+                    <th class="text-left px-5 py-3">Year</th>
+                    <th class="text-left px-5 py-3">Dept</th>
+                    <th class="text-left px-5 py-3">Face Data</th>
+                    <th class="text-right px-5 py-3">Actions</th>
                 </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody>
                 {% for student in students %}
-                <tr>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-500">{{ loop.index }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-700">{{ student.prn }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ student.student_name }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ student.roll_no if student.roll_no else 'N/A' }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ student.division }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ student.academic_year }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ student.dept_code }}</td>
-                     <td class="px-6 py-4 whitespace-nowrap text-sm">
+                <tr class="{% if loop.index is odd %}bg-white{% else %}bg-indigo-50/30{% endif %}">
+                    <td class="px-5 py-4 text-sm text-gray-400 font-medium">{{ loop.index }}</td>
+                    <td class="px-5 py-4">
+                        <span class="font-mono text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded">{{ student.prn
+                            }}</span>
+                    </td>
+                    <td class="px-5 py-4">
+                        <div class="flex items-center gap-2.5">
+                            <div
+                                class="w-8 h-8 rounded-full grad-primary flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                                {{ student.student_name[0] | upper }}
+                            </div>
+                            <span class="font-semibold text-gray-900 text-sm">{{ student.student_name }}</span>
+                        </div>
+                    </td>
+                    <td class="px-5 py-4 text-sm text-gray-500">{{ student.roll_no if student.roll_no else '—' }}</td>
+                    <td class="px-5 py-4">
+                        <span class="badge-info">{{ student.division }}</span>
+                    </td>
+                    <td class="px-5 py-4 text-sm text-gray-600">{{ student.academic_year }}</td>
+                    <td class="px-5 py-4 text-sm text-gray-600">{{ student.dept_code }}</td>
+                    <td class="px-5 py-4">
                         {% if student.embedding_count > 0 %}
-                            <span class="text-green-600">✓ Yes</span>
+                        <span class="badge-success"><i class="fa-solid fa-circle-check mr-1"></i>{{
+                            student.embedding_count }} faces</span>
                         {% else %}
-                             <span class="text-red-600">✗ No</span>
+                        <span class="badge-danger"><i class="fa-solid fa-circle-xmark mr-1"></i>None</span>
                         {% endif %}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <a href="{{ url_for('teacher.edit_student', student_id=student.student_id) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</a>
-                        <form method="POST" action="{{ url_for('teacher.delete_student', student_id=student.student_id) }}" class="inline-block" onsubmit="return confirm('WARNING: Are you sure you want to permanently delete student {{ student.prn }}? This will also delete all associated face data and attendance records!');">
-                            <input type="hidden" name="_method" value="DELETE">
-                            <button type="submit" class="text-red-600 hover:text-red-900 bg-transparent border-none p-0 cursor-pointer text-sm font-medium">
-                                Delete
-                            </button>
-                        </form>
+                    <td class="px-5 py-4 text-right">
+                        <div class="flex items-center justify-end gap-2">
+                            <a href="{{ url_for('teacher.edit_student', student_id=student.student_id) }}"
+                                title="Edit Student"
+                                class="w-8 h-8 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-600 flex items-center justify-center transition-colors">
+                                <i class="fa-solid fa-pen-to-square text-xs"></i>
+                            </a>
+                            <form method="POST"
+                                action="{{ url_for('teacher.delete_student', student_id=student.student_id) }}"
+                                class="inline-block"
+                                onsubmit="return confirm('WARNING: Permanently delete student {{ student.prn }}? This cannot be undone.');">
+                                <input type="hidden" name="_method" value="DELETE">
+                                <button type="submit" title="Delete Student"
+                                    class="w-8 h-8 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-600 flex items-center justify-center transition-colors">
+                                    <i class="fa-solid fa-trash text-xs"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+    </div>
     {% else %}
-        <p class="text-gray-500">No active students found.</p>
+    <div class="flex flex-col items-center text-center py-16">
+        <div class="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mb-4">
+            <i class="fa-solid fa-user-group text-indigo-300 text-3xl"></i>
+        </div>
+        <h3 class="text-gray-700 font-semibold mb-1">No students yet</h3>
+        <p class="text-gray-400 text-sm mb-4">Add your first student to get started.</p>
+        <a href="{{ url_for('teacher.add_student') }}" class="btn-primary text-sm">
+            <i class="fa-solid fa-user-plus mr-2"></i>Add Student(s)
+        </a>
+    </div>
     {% endif %}
 </div>
 {% endblock %}
