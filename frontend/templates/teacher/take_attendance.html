@@ -322,12 +322,12 @@
             if (webcamStatusText) webcamStatusText.textContent = text;
             if (statusDot) {
                 statusDot.className = `w-2 h-2 rounded-full ${state === 'ok' ? 'bg-emerald-400' :
-                        state === 'active' ? 'bg-indigo-400 pulse-dot' :
-                            state === 'error' ? 'bg-rose-400' : 'bg-gray-300'
+                    state === 'active' ? 'bg-indigo-400 pulse-dot' :
+                        state === 'error' ? 'bg-rose-400' : 'bg-gray-300'
                     }`;
                 if (webcamStatusText) webcamStatusText.className = `text-xs ${state === 'ok' ? 'text-emerald-600' :
-                        state === 'active' ? 'text-indigo-500' :
-                            state === 'error' ? 'text-rose-500' : 'text-gray-400'
+                    state === 'active' ? 'text-indigo-500' :
+                        state === 'error' ? 'text-rose-500' : 'text-gray-400'
                     }`;
             }
             if (webcamContainer) {
@@ -377,14 +377,19 @@
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 videoElement.srcObject = stream;
+
+                // We use onloadedmetadata to ensure video dimensions exist before capturing
                 videoElement.onloadedmetadata = () => {
-                    videoElement.play();
-                    recognizeButton.disabled = false;
-                    setWebcamStatus('Webcam ready', 'ok');
-                    if (webcamContainer) webcamContainer.classList.add('active');
+                    videoElement.play().then(() => {
+                        if (webcamContainer) webcamContainer.classList.add('active');
+                        // Start automatic capture tracking for the first 10 minutes
+                        setTimeout(() => { startAutoCapture(); }, 500);
+                    }).catch(e => {
+                        console.error("Video play error:", e);
+                    });
                 };
             } catch (err) {
-                recognizeButton.disabled = true;
+                if (recognizeButton) recognizeButton.disabled = true;
                 setWebcamStatus(`Error: ${err.name}`, 'error');
             }
         }
@@ -486,20 +491,98 @@
             });
         }
 
-        // Webcam Capture
+        // --- Auto-Capture Logic ---
+        let autoCaptureInterval = null;
+        let autoCaptureTimeout = null;
+        let autoCaptureStartTime = null;
+        const AUTO_CAPTURE_DURATION_MS = 10 * 60 * 1000; // 10 minutes
+        const AUTO_CAPTURE_INTERVAL_MS = 30 * 1000;      // 30 seconds
+
+        function updateAutoCaptureUI() {
+            if (!autoCaptureStartTime) return;
+            const elapsed = Date.now() - autoCaptureStartTime;
+            const remaining = Math.max(0, AUTO_CAPTURE_DURATION_MS - elapsed);
+
+            if (remaining > 0) {
+                const mins = Math.floor(remaining / 60000);
+                const secs = Math.floor((remaining % 60000) / 1000);
+                if (recognizeButton) {
+                    recognizeButton.innerHTML = `<i class="fa-solid fa-robot fa-spin text-amber-300 mr-2"></i>Auto-Capturing (${mins}:${secs.toString().padStart(2, '0')})`;
+                    recognizeButton.disabled = true;
+                }
+            } else {
+                stopAutoCapture();
+            }
+        }
+
+        function triggerAutoCapture() {
+            if (!videoElement || !context || videoElement.readyState < 3) return;
+            canvasElement.width = videoElement.videoWidth;
+            canvasElement.height = videoElement.videoHeight;
+            context.drawImage(videoElement, 0, 0);
+            const dataUrl = canvasElement.toDataURL('image/jpeg', 0.9);
+
+            // Send the image silently in the background
+            setWebcamStatus('Auto-scanning...', 'active');
+            sendImageForRecognition(dataUrl, 'FACE_LIVE').finally(() => {
+                if (autoCaptureStartTime) setWebcamStatus('Auto-capture active', 'ok');
+                else setWebcamStatus('Webcam ready', 'ok');
+            });
+        }
+
+        function startAutoCapture() {
+            autoCaptureStartTime = Date.now();
+            updateAutoCaptureUI(); // Update the button instantly!
+            triggerAutoCapture(); // fire the first frame immediately!
+
+            // Set up background heartbeat
+            autoCaptureInterval = setInterval(() => {
+                triggerAutoCapture();
+            }, AUTO_CAPTURE_INTERVAL_MS);
+
+            // Set up UI countdown
+            const uiTimer = setInterval(() => {
+                if (autoCaptureStartTime) updateAutoCaptureUI();
+                else clearInterval(uiTimer);
+            }, 1000);
+
+            // Schedule the shutdown
+            autoCaptureTimeout = setTimeout(() => {
+                stopAutoCapture();
+            }, AUTO_CAPTURE_DURATION_MS);
+        }
+
+        function stopAutoCapture() {
+            if (autoCaptureInterval) clearInterval(autoCaptureInterval);
+            if (autoCaptureTimeout) clearTimeout(autoCaptureTimeout);
+            autoCaptureStartTime = null;
+            autoCaptureInterval = null;
+            autoCaptureTimeout = null;
+
+            if (recognizeButton) {
+                recognizeButton.innerHTML = '<i class="fa-solid fa-check-circle text-emerald-400 mr-2"></i>Auto-Capture Finished (Click for Manual)';
+                recognizeButton.disabled = false;
+            }
+            setWebcamStatus('Webcam ready', 'ok');
+        }
+
+        // --- Manual Capture Override ---
+        // (Only executable if Auto-Capture has finished or hasn't started)
         if (recognizeButton) {
             recognizeButton.addEventListener('click', () => {
+                if (autoCaptureStartTime) return; // Prevent clicking while robot is running
                 if (!videoElement || !context || videoElement.readyState < 3) return;
                 canvasElement.width = videoElement.videoWidth;
                 canvasElement.height = videoElement.videoHeight;
                 context.drawImage(videoElement, 0, 0);
                 const dataUrl = canvasElement.toDataURL('image/jpeg', 0.9);
+
                 recognizeButton.disabled = true;
                 recognizeButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Processing...';
                 setWebcamStatus('Recognizing...', 'active');
                 sendImageForRecognition(dataUrl, 'FACE_LIVE').finally(() => {
                     recognizeButton.disabled = false;
-                    recognizeButton.innerHTML = '<i class="fa-solid fa-camera mr-2"></i>Capture &amp; Recognize Frame';
+                    recognizeButton.innerHTML = '<i class="fa-solid fa-camera mr-2"></i>Manual Capture Frame';
                     setWebcamStatus('Webcam ready', 'ok');
                 });
             });
