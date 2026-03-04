@@ -19,7 +19,7 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL, -- Increased length for hash
     full_name VARCHAR(100) NOT NULL,
     email VARCHAR(120) UNIQUE,
-    role ENUM('Admin', 'HOD', 'Teacher') NOT NULL,
+    role ENUM('Admin', 'HOD', 'Teacher', 'Student') NOT NULL,
     dept_id INT ,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -38,10 +38,12 @@ CREATE TABLE students (
     academic_year VARCHAR(10) NOT NULL,
     email VARCHAR(100) UNIQUE,
     phone VARCHAR(15),
+    user_id INT UNIQUE,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (dept_id) REFERENCES departments(dept_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL,
     INDEX idx_prn (prn),
     INDEX idx_roll_division (roll_no, division)
 ) ENGINE=InnoDB;

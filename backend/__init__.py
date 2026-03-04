@@ -36,11 +36,13 @@ def create_app(config_class=None):
 
     from .hod.routes import hod_bp
     from .teacher.routes import teacher_bp
+    from .student.routes import student_bp
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(hod_bp, url_prefix='/hod')
     app.register_blueprint(teacher_bp, url_prefix='/teacher')
+    app.register_blueprint(student_bp, url_prefix='/student')
 
     @app.context_processor
     def inject_now():

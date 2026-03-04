@@ -88,6 +88,7 @@ def role_required(role_name):
             'Admin': 'admin.dashboard',
             'HOD': 'hod.dashboard',
             'Teacher': 'teacher.dashboard',
+            'Student': 'student.dashboard',
         }
         endpoint = role_to_endpoint.get(role)
         if endpoint:

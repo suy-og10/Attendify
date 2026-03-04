@@ -26,6 +26,7 @@ def login():
         if g.user['role'] == 'Admin': return redirect(url_for('admin.dashboard'))
         if g.user['role'] == 'HOD': return redirect(url_for('hod.dashboard'))
         if g.user['role'] == 'Teacher': return redirect(url_for('teacher.dashboard'))
+        if g.user['role'] == 'Student': return redirect(url_for('student.dashboard'))
         return redirect(url_for('auth.home')) # Use blueprint name
 
     if request.method == 'POST':
@@ -60,6 +61,8 @@ def login():
                 return redirect(url_for('hod.dashboard'))
             elif user['role'] == 'Teacher':
                 return redirect(url_for('teacher.dashboard'))
+            elif user['role'] == 'Student':
+                return redirect(url_for('student.dashboard'))
             else:
                 return redirect(url_for('auth.home')) # Use blueprint name
         else:
