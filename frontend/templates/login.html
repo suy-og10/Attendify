@@ -37,7 +37,7 @@
 
         <!-- Left Panel: Branding -->
         <div
-            class="animated-gradient hidden lg:flex flex-col items-center justify-center p-12 relative overflow-hidden shimmer">
+            class="animated-gradient hidden lg:flex flex-col items-center justify-center p-12 relative overflow-hidden">
             <!-- Floating bubbles -->
             <div class="absolute top-10 left-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
             <div class="absolute bottom-16 right-8 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
@@ -80,11 +80,19 @@
                     <i class="fa-solid fa-camera text-indigo-500 text-lg"></i>
                     <span class="font-black text-indigo-700 text-lg">Attendify</span>
                 </div>
+                {% if role %}
+                <h2 class="text-3xl font-black text-gray-900 mb-1">{{ role }} Login</h2>
+                <p class="text-gray-500 text-sm">Sign in with your {{ role.lower() }} credentials</p>
+                {% else %}
                 <h2 class="text-3xl font-black text-gray-900 mb-1">Welcome back!</h2>
                 <p class="text-gray-500 text-sm">Sign in to access your dashboard</p>
+                {% endif %}
             </div>
 
             <form method="POST" action="{{ url_for('auth.login') }}" class="space-y-5">
+                {% if role %}
+                <input type="hidden" name="role" value="{{ role }}">
+                {% endif %}
                 <!-- Username -->
                 <div>
                     <label for="username" class="block text-sm font-semibold text-gray-700 mb-1.5">Username</label>

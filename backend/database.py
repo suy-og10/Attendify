@@ -35,16 +35,10 @@ def init_db():
     schema_path = os.path.join(current_app.root_path, 'schema_mysql.sql')
     try:
         with current_app.open_resource(schema_path, mode='r') as f:
-            # Read SQL commands, splitting by semicolon (basic handling)
-            sql_commands = f.read().split(';')
-            for command in sql_commands:
-                command = command.strip()
-                if command:
-                    try:
-                       cursor.execute(command)
-                    except mysql.connector.Error as cmd_err:
-                        current_app.logger.error(f"Error executing command: {command}\n{cmd_err}")
-                        raise cmd_err
+            sql_script = f.read()
+            # Execute with multi=True to handle multiple statements properly
+            for result in cursor.execute(sql_script, multi=True):
+                pass # Consume results to ensure all statements execute
         db.commit()
         current_app.logger.info("MySQL database schema applied.")
     except FileNotFoundError:

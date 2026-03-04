@@ -1,0 +1,135 @@
+{% extends "layout.html" %}
+{% block title %}Welcome — Attendify{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div
+    class="animated-gradient rounded-3xl p-10 md:p-16 mb-12 relative overflow-hidden shadow-2xl text-center text-white">
+    <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4">
+    </div>
+    <div class="absolute bottom-0 left-1/4 w-48 h-48 bg-purple-300/20 rounded-full blur-2xl translate-y-1/2"></div>
+    <div class="relative z-10 flex flex-col items-center">
+        <div class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-6 shadow-xl">
+            <i class="fa-solid fa-camera text-white text-3xl"></i>
+        </div>
+        <h1 class="text-4xl md:text-6xl font-black mb-4 tracking-tight drop-shadow-md">
+            Revolutionizing Attendance with AI
+        </h1>
+        <p class="text-purple-100 text-lg md:text-xl max-w-2xl mb-8 leading-relaxed">
+            A seamless, secure, and modern face recognition attendance system designed for educational institutions.
+            Track attendance in real-time, generate detailed reports, and streamline departmental workflows.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="#roles"
+                class="btn-primary bg-white text-indigo-700 hover:bg-white hover:text-indigo-800 font-bold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all text-lg flex items-center gap-2"
+                style="background: #ffffff; color: #4338ca;">
+                Get Started <i class="fa-solid fa-arrow-down"></i>
+            </a>
+            <a href="{{ url_for('auth.register') }}"
+                class="btn-primary border-2 border-white bg-transparent text-white hover:bg-white/10 font-bold px-8 py-4 rounded-xl shadow-lg hover:-translate-y-1 transition-all text-lg flex items-center gap-2"
+                style="background: transparent; box-shadow: none;">
+                Register Now <i class="fa-solid fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+    <div class="section-card p-8 card-hover text-center">
+        <div class="w-14 h-14 grad-primary rounded-xl flex items-center justify-center mx-auto mb-5 shadow-lg">
+            <i class="fa-solid fa-face-viewfinder text-white text-2xl"></i>
+        </div>
+        <h3 class="text-xl font-bold text-gray-900 mb-2">Face Recognition</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">Instantly identify students using advanced AI models. No more
+            manual roll calls or proxy attendance.</p>
+    </div>
+    <div class="section-card p-8 card-hover text-center">
+        <div class="w-14 h-14 grad-emerald rounded-xl flex items-center justify-center mx-auto mb-5 shadow-lg">
+            <i class="fa-solid fa-chart-line text-white text-2xl"></i>
+        </div>
+        <h3 class="text-xl font-bold text-gray-900 mb-2">Real-time Tracking</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">Monitor class attendance live as it happens. Get instant
+            insights and daily reports right on your dashboard.</p>
+    </div>
+    <div class="section-card p-8 card-hover text-center">
+        <div class="w-14 h-14 grad-sky rounded-xl flex items-center justify-center mx-auto mb-5 shadow-lg">
+            <i class="fa-solid fa-file-invoice text-white text-2xl"></i>
+        </div>
+        <h3 class="text-xl font-bold text-gray-900 mb-2">Detailed Reporting</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">Export weekly, monthly, or cross-departmental attendance
+            reports in one click for academic record-keeping.</p>
+    </div>
+</div>
+
+<!-- Role Selection Section -->
+<div id="roles" class="mb-12 scroll-mt-24">
+    <div class="text-center mb-10">
+        <h2 class="text-3xl md:text-4xl font-black text-gray-900 mb-3">Choose Your Portal</h2>
+        <p class="text-gray-500 max-w-xl mx-auto">Select your role to access your personalized Attendify dashboard and
+            manage your responsibilities.</p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Student -->
+        <a href="{{ url_for('auth.login', role='Student') }}"
+            class="section-card p-8 card-hover flex flex-col items-center text-center group">
+            <div
+                class="w-20 h-20 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-sm border border-blue-100">
+                <i class="fa-solid fa-user-graduate text-3xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-1">Student</h3>
+            <p class="text-gray-500 text-xs mb-5">View personal attendance and academic schedule.</p>
+            <div
+                class="mt-auto px-4 py-2 bg-gray-50 text-indigo-600 rounded-lg text-sm font-semibold group-hover:bg-indigo-50 w-full">
+                Login as Student <i class="fa-solid fa-arrow-right ml-1"></i>
+            </div>
+        </a>
+
+        <!-- Teacher -->
+        <a href="{{ url_for('auth.login', role='Teacher') }}"
+            class="section-card p-8 card-hover flex flex-col items-center text-center group">
+            <div
+                class="w-20 h-20 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-sm border border-emerald-100">
+                <i class="fa-solid fa-person-chalkboard text-3xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-1">Teacher</h3>
+            <p class="text-gray-500 text-xs mb-5">Mark attendance, manage classes, and view student lists.</p>
+            <div
+                class="mt-auto px-4 py-2 bg-gray-50 text-indigo-600 rounded-lg text-sm font-semibold group-hover:bg-indigo-50 w-full">
+                Login as Teacher <i class="fa-solid fa-arrow-right ml-1"></i>
+            </div>
+        </a>
+
+        <!-- HOD -->
+        <a href="{{ url_for('auth.login', role='HOD') }}"
+            class="section-card p-8 card-hover flex flex-col items-center text-center group">
+            <div
+                class="w-20 h-20 rounded-full bg-purple-50 text-purple-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-sm border border-purple-100">
+                <i class="fa-solid fa-users-viewfinder text-3xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-1">HOD</h3>
+            <p class="text-gray-500 text-xs mb-5">Departmental oversight, scheduling, and teacher management.</p>
+            <div
+                class="mt-auto px-4 py-2 bg-gray-50 text-indigo-600 rounded-lg text-sm font-semibold group-hover:bg-indigo-50 w-full">
+                Login as HOD <i class="fa-solid fa-arrow-right ml-1"></i>
+            </div>
+        </a>
+
+        <!-- Admin -->
+        <a href="{{ url_for('auth.login', role='Admin') }}"
+            class="section-card p-8 card-hover flex flex-col items-center text-center group">
+            <div
+                class="w-20 h-20 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-sm border border-rose-100">
+                <i class="fa-solid fa-user-shield text-3xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-1">Admin</h3>
+            <p class="text-gray-500 text-xs mb-5">System configuration, global settings, and user approval.</p>
+            <div
+                class="mt-auto px-4 py-2 bg-gray-50 text-indigo-600 rounded-lg text-sm font-semibold group-hover:bg-indigo-50 w-full">
+                Login as Admin <i class="fa-solid fa-arrow-right ml-1"></i>
+            </div>
+        </a>
+    </div>
+</div>
+{% endblock %}

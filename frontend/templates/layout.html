@@ -517,8 +517,17 @@
                     <i class="fa-solid fa-right-from-bracket"></i><span class="hidden sm:inline">Logout</span>
                 </a>
                 {% else %}
+                <a href="{{ url_for('auth.landing') }}" class="nav-link hidden sm:inline-flex">
+                    <i class="fa-solid fa-house"></i> Home
+                </a>
+                <a href="{{ url_for('auth.about') }}" class="nav-link hidden sm:inline-flex">
+                    <i class="fa-solid fa-circle-info"></i> About
+                </a>
                 <a href="{{ url_for('auth.login') }}" class="nav-link">
                     <i class="fa-solid fa-right-to-bracket"></i> Login
+                </a>
+                <a href="{{ url_for('auth.register') }}" class="nav-link" style="background:rgba(255,255,255,0.15);">
+                    <i class="fa-solid fa-user-plus"></i> Register
                 </a>
                 {% endif %}
             </div>

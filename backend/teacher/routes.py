@@ -53,6 +53,52 @@ def dashboard():
 
     return render_template('teacher/dashboard.html', user=g.user, schedules=schedules_with_day_names)
 
+@teacher_bp.route('/add_schedule', methods=['GET', 'POST'])
+@login_required
+@role_required('Teacher')
+def add_schedule():
+    teacher_id = session.get('user_id')
+    teacher_dept_id = g.user.get('dept_id')
+
+    # Fetch subjects from the Teacher's department
+    subjects = query_db("SELECT subject_id, subject_name, subject_code FROM subjects WHERE dept_id = %s AND is_active = TRUE ORDER BY subject_code", (teacher_dept_id,))
+    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+    if request.method == 'POST':
+        subject_id = request.form.get('subject_id', type=int)
+        division = request.form.get('division', '').strip().upper()
+        day_of_week = request.form.get('day_of_week', type=int)
+        start_time = request.form.get('start_time')
+        end_time = request.form.get('end_time')
+        academic_year = request.form.get('academic_year', '').strip()
+        classroom = request.form.get('classroom', '').strip() or None
+        is_active = True
+        error = None
+
+        if not all([subject_id, division, academic_year]) or day_of_week is None or not start_time or not end_time:
+            error = "All fields except Classroom are required."
+        elif day_of_week < 0 or day_of_week > 6:
+             error = "Invalid day selected."
+        elif start_time >= end_time:
+             error = "Start time must be before end time."
+
+        if error is None:
+            try:
+                execute_db("""
+                    INSERT INTO class_schedules (subject_id, teacher_id, division, day_of_week, start_time, end_time, academic_year, classroom, is_active)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, (subject_id, teacher_id, division, day_of_week, start_time, end_time, academic_year, classroom, is_active))
+                flash("Class schedule added successfully.", "success")
+                return redirect(url_for('.dashboard')) # Redirect to dashboard
+            except Exception as e:
+                 error = f"Database error adding schedule: {e}"
+                 current_app.logger.error(f"Error adding schedule by Teacher {g.user['username']}: {e}", exc_info=True)
+
+        flash(error, 'error')
+        return render_template('teacher/add_schedule.html', subjects=subjects or [], days=days, form_data=request.form)
+
+    return render_template('teacher/add_schedule.html', subjects=subjects or [], days=days)
+
 # --- Student Management ---
 @teacher_bp.route('/students')
 @login_required
@@ -544,8 +590,18 @@ def edit_student(student_id):
         return redirect(url_for('.list_students'))
 
     # Optional: Check if teacher's dept matches student's dept
-    teacher_dept_id = g.user.get('dept_id')
-    if teacher_dept_id and student['dept_id'] != teacher_dept_id:
+    teacher_id = session.get('user_id')
+    is_allowed = query_db("""
+        SELECT 1
+        FROM class_schedules cs
+        JOIN subjects sub ON cs.subject_id = sub.subject_id
+        JOIN students s ON s.division = cs.division 
+                        AND s.academic_year = cs.academic_year 
+                        AND s.dept_id = sub.dept_id
+        WHERE cs.teacher_id = %s AND s.student_id = %s AND cs.is_active = TRUE
+    """, (teacher_id, student_id), one=True)
+    
+    if not is_allowed:
          flash("You do not have permission to edit this student.", "error")
          return redirect(url_for('.list_students'))
 
@@ -648,12 +704,17 @@ def api_capture_embedding():
     if not student_id or not base64_image:
         return jsonify({"error": "Missing student_id or image_data"}), 400
 
-    teacher_dept_id = g.user.get('dept_id')
-    allowed_student = query_db(
-        "SELECT student_id FROM students WHERE student_id = %s AND is_active = TRUE AND dept_id = %s",
-        (student_id, teacher_dept_id),
-        one=True
-    )
+    teacher_id = session.get('user_id')
+    allowed_student = query_db("""
+        SELECT 1
+        FROM class_schedules cs
+        JOIN subjects sub ON cs.subject_id = sub.subject_id
+        JOIN students s ON s.division = cs.division 
+                        AND s.academic_year = cs.academic_year 
+                        AND s.dept_id = sub.dept_id
+        WHERE cs.teacher_id = %s AND s.student_id = %s AND cs.is_active = TRUE AND s.is_active = TRUE
+    """, (teacher_id, student_id), one=True)
+    
     if not allowed_student:
         return jsonify({"error": "Permission denied for this student"}), 403
 
@@ -690,10 +751,20 @@ def delete_student(student_id):
         flash(f"Student ID {student_id} not found.", "error")
         return redirect(url_for('.list_students'))
 
-    # 2. Check Permission (Student must belong to the teacher's department)
-    teacher_dept_id = g.user.get('dept_id')
-    if teacher_dept_id and student['dept_id'] != teacher_dept_id:
-        flash("Permission denied. You can only delete students within your department.", "error")
+    # 2. Check Permission (Student must belong to the teacher's schedule)
+    teacher_id = session.get('user_id')
+    is_allowed = query_db("""
+        SELECT 1
+        FROM class_schedules cs
+        JOIN subjects sub ON cs.subject_id = sub.subject_id
+        JOIN students s ON s.division = cs.division 
+                        AND s.academic_year = cs.academic_year 
+                        AND s.dept_id = sub.dept_id
+        WHERE cs.teacher_id = %s AND s.student_id = %s AND cs.is_active = TRUE
+    """, (teacher_id, student_id), one=True)
+    
+    if not is_allowed:
+        flash("Permission denied. You can only delete students within your active classes.", "error")
         current_app.logger.warning(f"User {session['username']} attempted unauthorized deletion of student ID {student_id}.")
         return redirect(url_for('.list_students'))
 

@@ -1,0 +1,151 @@
+{% extends "layout.html" %}
+{% block title %}About — Attendify{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div
+    class="animated-gradient rounded-3xl p-10 md:p-16 mb-12 relative overflow-hidden shadow-2xl text-center text-white">
+    <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4">
+    </div>
+    <div class="absolute bottom-0 left-1/4 w-48 h-48 bg-purple-300/20 rounded-full blur-2xl translate-y-1/2"></div>
+    <div class="relative z-10 flex flex-col items-center">
+        <div class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-6 shadow-xl">
+            <i class="fa-solid fa-circle-info text-white text-3xl"></i>
+        </div>
+        <h1 class="text-4xl md:text-5xl font-black mb-4 tracking-tight drop-shadow-md">
+            About Attendify
+        </h1>
+        <p class="text-purple-100 text-lg md:text-xl max-w-2xl mb-2 leading-relaxed">
+            The intelligent approach to face recognition attendance mapping.
+        </p>
+    </div>
+</div>
+
+<!-- Project Information & Contact -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+    <!-- About The Project -->
+    <div class="section-card p-8 shadow-md border-t-4 border-indigo-500">
+        <div class="flex items-center gap-4 mb-4">
+            <div class="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
+                <i class="fa-solid fa-laptop-code text-xl"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-900">The Project</h2>
+        </div>
+        <p class="text-gray-600 leading-relaxed text-sm mb-4">
+            Attendify is an AI-powered Attendance Management System designed to streamline the academic attendance
+            process. By leveraging advanced facial recognition technology, Attendify eliminates proxy attendance,
+            drastically reduces manual administrative burden, and provides deep analytical insights into student
+            participation.
+        </p>
+        <p class="text-gray-600 leading-relaxed text-sm">
+            Our system is built with secure role-based access to empower Students, Teachers, HODs, and Administrators
+            with the tailored visibility they need.
+        </p>
+    </div>
+
+    <!-- Contact Us -->
+    <div class="section-card p-8 shadow-md border-t-4 border-emerald-500">
+        <div class="flex items-center gap-4 mb-4">
+            <div class="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
+                <i class="fa-solid fa-envelope-open-text text-xl"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-900">Contact Us</h2>
+        </div>
+        <p class="text-gray-600 leading-relaxed text-sm mb-6">
+            Have questions, feedback, or need support? We're here to help you get the most out of Attendify. Reach out
+            to the development team at our institute.
+        </p>
+        <ul class="space-y-4">
+            <li class="flex items-start gap-3">
+                <i class="fa-solid fa-location-dot mt-1 text-gray-400"></i>
+                <span class="text-sm text-gray-700">KIT's College of Engineering Kolhapur<br>Gokul Shirgaon, Kolhapur,
+                    Maharashtra</span>
+            </li>
+            <li class="flex items-center gap-3">
+                <i class="fa-solid fa-envelope text-gray-400"></i>
+                <a href="mailto:support@attendify.edu"
+                    class="text-sm text-indigo-600 hover:underline">support@attendify.edu</a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<!-- Team Section -->
+<div class="mb-16">
+    <div class="text-center mb-10">
+        <h2 class="text-3xl font-black text-gray-900 mb-3">Meet the Team</h2>
+        <p class="text-indigo-600 font-semibold mb-2">Final Year CSBS Students</p>
+        <p class="text-gray-500 max-w-xl mx-auto text-sm">KIT's College of Engineering Kolhapur</p>
+    </div>
+
+    <!-- Using a flex container with wrap to center the 5 items attractively -->
+    <div class="flex flex-wrap justify-center gap-6">
+
+        <!-- Member 1 -->
+        <div class="section-card w-full sm:w-64 p-6 flex flex-col items-center text-center card-hover group">
+            <div
+                class="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 text-indigo-500 flex items-center justify-center mb-4 border-2 border-white shadow-md group-hover:scale-110 transition-transform duration-300">
+                <i class="fa-solid fa-user-tie text-3xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 mb-1">Prathamesh Ashok Sonar</h3>
+            <div
+                class="mt-2 inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-semibold tracking-wider">
+                PRN: 2223000373
+            </div>
+        </div>
+
+        <!-- Member 2 -->
+        <div class="section-card w-full sm:w-64 p-6 flex flex-col items-center text-center card-hover group">
+            <div
+                class="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 text-emerald-500 flex items-center justify-center mb-4 border-2 border-white shadow-md group-hover:scale-110 transition-transform duration-300">
+                <i class="fa-solid fa-user-tie text-3xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 mb-1">Suyog Rajkumar Lokhande</h3>
+            <div
+                class="mt-2 inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-semibold tracking-wider">
+                PRN: 2223000455
+            </div>
+        </div>
+
+        <!-- Member 3 -->
+        <div class="section-card w-full sm:w-64 p-6 flex flex-col items-center text-center card-hover group">
+            <div
+                class="w-20 h-20 rounded-full bg-gradient-to-br from-rose-100 to-orange-100 text-rose-500 flex items-center justify-center mb-4 border-2 border-white shadow-md group-hover:scale-110 transition-transform duration-300">
+                <i class="fa-solid fa-user-graduate text-3xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 mb-1">Snehal Raghunath Pawar</h3>
+            <div
+                class="mt-2 inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-semibold tracking-wider">
+                PRN: 2223000865
+            </div>
+        </div>
+
+        <!-- Member 4 -->
+        <div class="section-card w-full sm:w-64 p-6 flex flex-col items-center text-center card-hover group">
+            <div
+                class="w-20 h-20 rounded-full bg-gradient-to-br from-blue-100 to-cyan-100 text-blue-500 flex items-center justify-center mb-4 border-2 border-white shadow-md group-hover:scale-110 transition-transform duration-300">
+                <i class="fa-solid fa-user-graduate text-3xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 mb-1">Akansha Jaykumar Mane</h3>
+            <div
+                class="mt-2 inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-semibold tracking-wider">
+                PRN: 2223000805
+            </div>
+        </div>
+
+        <!-- Member 5 -->
+        <div class="section-card w-full sm:w-64 p-6 flex flex-col items-center text-center card-hover group">
+            <div
+                class="w-20 h-20 rounded-full bg-gradient-to-br from-fuchsia-100 to-pink-100 text-fuchsia-500 flex items-center justify-center mb-4 border-2 border-white shadow-md group-hover:scale-110 transition-transform duration-300">
+                <i class="fa-solid fa-user-graduate text-3xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 mb-1">Shruti Rajendra Junnarkar</h3>
+            <div
+                class="mt-2 inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-semibold tracking-wider">
+                PRN: 2223001069
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

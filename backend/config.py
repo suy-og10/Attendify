@@ -7,15 +7,19 @@ load_dotenv(os.path.join(rootdir, '.env'))
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY')
+    if not SECRET_KEY:
+        raise ValueError("No SECRET_KEY set for Flask application. Check your .env file.")
 
     ENV = os.environ.get('FLASK_ENV', 'production')
     DEBUG = ENV == 'development'
 
     # --- MySQL Configuration ---
     MYSQL_USER = os.environ.get('MYSQL_USER', 'root')
-    MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', '')
-    MYSQL_HOST = os.environ.get('MYSQL_HOST', 'localhost') # e.g., 'localhost' or '127.0.0.1'
-    MYSQL_DB = os.environ.get('MYSQL_DB', 'attendify') # e.g., 'attendify_db'
+    MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD')
+    if MYSQL_PASSWORD is None:
+        raise ValueError("No MYSQL_PASSWORD set for application. Check your .env file.")
+    MYSQL_HOST = os.environ.get('MYSQL_HOST', 'localhost')
+    MYSQL_DB = os.environ.get('MYSQL_DB', 'attendify')
 
     # Connection string for SQLAlchemy (recommended) or direct use
     # Using mysql-connector-python driver
