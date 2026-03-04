@@ -1,110 +1,88 @@
-# Attendify - Mark your presence effectively
+# Attendify - Smart Attendance Management System
 
-A face dataset collection system for building an attendance management system using computer vision.
+Attendify is an AI-powered face recognition attendance management system built for modern educational institutions. It provides a comprehensive web-based platform with distinct portals for administrators, heads of departments (HOD), teachers, and students.
 
-## Features
+## Key Features
 
-- **Automated Image Capture**: Captures images at the specified time intervals
-- **User Input System**: Prompts for student name and roll number
-- **Organized Storage**: Creates structured directories with metadata
-- **Real-time Feedback**: Display capture progress and countdown
-- **Batch Processing**: Support for the multiple students in one session
+- **Automated Face Recognition Attendance**: Teachers can mark attendance using live webcam feeds or uploaded classroom photos via the web interface.
+- **Role-Based Access Control**:
+  - **Admin**: Manage the entire system, approve new users.
+  - **HOD**: Manage departments, subjects, students, and class schedules.
+  - **Teacher**: Take attendance via face recognition or manual entry, and view class-specific attendance records.
+  - **Student**: View personalized attendance dashboards and detailed subject-wise attendance records.
+- **Smart Reports & Analytics**: Instantly generate detailed attendance reports per subject, division, or date range.
+- **Timetable Management**: HODs can assign teachers to subjects and configure weekly class schedules.
+- **Face Dataset Management**: Utilities to capture and register student faces for the recognition engine.
+
+## Technology Stack
+
+- **Backend**: Python, Flask, MySQL
+- **Frontend**: HTML5, Vanilla CSS, TailwindCSS (for utility styling via JS or CDN), JavaScript
+- **Computer Vision**: OpenCV, InsightFace / RetinaFace (for face detection and embeddings)
 
 ## Requirements
 
-- Python 3.7+
-- OpenCV
-- NumPy
+- Python 3.8+
+- MySQL Server
+- A webcam (for live face capture and attendance)
 
-## Installation
+## Installation & Setup
 
-1. Clone the repository:
-```bash
-git clone https://github.com/suy-og10/Attendify
-cd Attendify
-```
-
-2. Create and activate virtual environment:
-```bash
-python -m venv venv
-venv\Scripts\activate  # On Windows
-# source venv/bin/activate  # On Linux/Mac
-```
-
-3. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-## Usage
-
-### Image Capture
-
-Run the image capture script:
-```bash
-python capture_images.py
-```
-
-The system will prompt you for:
-- Student name
-- Roll number
-- Capture interval (seconds between images)
-- Total number of images to capture
-
-### Dataset Structure
-
-Images are organized as follows:
-```
-dataset/
-├── StudentName_RollNumber/
-│   ├── person_info.json
-│   ├── StudentName_RollNumber_image_001.jpg
-│   ├── StudentName_RollNumber_image_002.jpg
-│   └── ...
-```
-
-## Test Utilities: Face Detection & Recognition (in `test/`)
-
-This repository includes optional utilities under `test/` for face detection and recognition using InsightFace and RetinaFace.
-
-Quick start:
-1. Prepare your dataset under `dataset/Person_Name_ID/*.jpg`.
-2. Generate embeddings (inside the `test/` directory):
+1. **Clone the repository:**
    ```bash
-   cd test
-   python generate_embeddings.py
+   git clone https://github.com/suy-og10/Attendify.git
+   cd Attendify
    ```
-3. Run recognition and provide the image path when prompted:
+
+2. **Create and activate a virtual environment:**
    ```bash
-   python face_recognizer.py
+   python -m venv venv
+   # On Windows:
+   venv\Scripts\activate
+   # On Linux/Mac:
+   source venv/bin/activate
    ```
-For details, see `test/README.md`.
 
-## Controls
+3. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-- **Press 'q'**: Quit capture early
-- **Automatic capture**: Images are captured at specified intervals
-- **3-second countdown**: Preparation time before capture starts
+4. **Database Configuration:**
+   - Ensure MySQL is running locally.
+   - Set up the environment variables or update `backend/config.py` with your MySQL connection details.
+   - Run the database initialization command (if available) or manually execute the schemas in `backend/schema_mysql.sql`.
+
+5. **Run the Web Application:**
+   ```bash
+   # From the project root
+   python backend/app.py
+   ```
+   Access the system at `http://127.0.0.1:5000/`.
+
+## Registration & Usage
+
+- **User Accounts**: By default, new accounts register as unapproved users. They require approval from an existing 'Admin' account in the database.
+- **Students**: Students can log in to view their attendance percentage and detailed daily logs per subject.
+- **Image Capture Utility**: Use `capture_images.py` in the root folder for bulk face dataset collection on headless/local setups.
 
 ## Project Structure
 
 ```
 AMS/
-├── capture_images.py    # Main image capture script
-├── photos.py           # Legacy capture script
-├── requirements.txt    # Python dependencies
-├── dataset/           # Captured images storage
-├── test/              # Face detection & recognition utilities (see test/README.md)
-└── README.md          # This file
+├── backend/            # Flask server, routes, database schemas, and AI logic
+│   ├── auth/           # Authentication routes
+│   ├── admin/, hod/, teacher/, student/ # Role-specific blueprints
+│   ├── app.py          # Application entry point
+│   └── schema_mysql.sql# MySQL Database schema definition
+├── frontend/           # Web interface files
+│   ├── static/         # CSS, JS, and Images
+│   └── templates/      # Jinja2 HTML templates
+├── dataset/            # Storage for raw captured face datasets
+├── test/               # Face detection & recognition sandbox utilities
+├── capture_images.py   # Bulk image capture script
+└── requirements.txt    # Python dependencies
 ```
-
-## Future Enhancements
-
-- Face recognition model training
-- Web-based interface using Flask
-- Attendance tracking system
-- Database integration
-- Real-time attendance monitoring
 
 ## Contributing
 
