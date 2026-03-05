@@ -17,8 +17,36 @@ def get_db():
             )
             current_app.logger.info(f"MySQL connection opened to {current_app.config['MYSQL_DB']}@{current_app.config['MYSQL_HOST']}")
         except mysql.connector.Error as err:
-            current_app.logger.error(f"MySQL connection error: {err}")
-            raise
+            if err.errno == 1049: # Unknown database
+                current_app.logger.warning(f"Database {current_app.config['MYSQL_DB']} does not exist. Creating it...")
+                try:
+                    temp_db = mysql.connector.connect(
+                        host=current_app.config['MYSQL_HOST'],
+                        user=current_app.config['MYSQL_USER'],
+                        password=current_app.config['MYSQL_PASSWORD']
+                    )
+                    cursor = temp_db.cursor()
+                    cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{current_app.config['MYSQL_DB']}`")
+                    cursor.close()
+                    temp_db.close()
+                except Exception as e:
+                    current_app.logger.error(f"Failed to create database: {e}")
+                    raise err # Re-raise original error if we can't create it
+                
+                # Try connecting again
+                g.db = mysql.connector.connect(
+                    host=current_app.config['MYSQL_HOST'],
+                    user=current_app.config['MYSQL_USER'],
+                    password=current_app.config['MYSQL_PASSWORD'],
+                    database=current_app.config['MYSQL_DB']
+                )
+                current_app.logger.info(f"MySQL connection to newly created {current_app.config['MYSQL_DB']} opened.")
+                
+                # Automatically initialize schema since it's a new database
+                init_db()
+            else:
+                current_app.logger.error(f"MySQL connection error: {err}")
+                raise
     return g.db
 
 def close_db(e=None):
@@ -36,9 +64,11 @@ def init_db():
     try:
         with current_app.open_resource(schema_path, mode='r') as f:
             sql_script = f.read()
-            # Execute with multi=True to handle multiple statements properly
-            for result in cursor.execute(sql_script, multi=True):
-                pass # Consume results to ensure all statements execute
+            # Execute each statement separately
+            statements = sql_script.split(';')
+            for statement in statements:
+                if statement.strip():
+                    cursor.execute(statement)
         db.commit()
         current_app.logger.info("MySQL database schema applied.")
     except FileNotFoundError:
