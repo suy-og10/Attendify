@@ -189,6 +189,60 @@ def add_subject():
 
 # --- Schedule Management ---
 
+@hod_bp.route('/add_schedule', methods=['GET', 'POST'])
+@login_required
+@role_required('HOD')
+def add_schedule():
+    hod_dept_id = session.get('dept_id')
+    if not hod_dept_id:
+        flash("Your department ID is not set.", "error")
+        return redirect(url_for('.dashboard'))
+
+    # Fetch subjects from the HOD's department
+    subjects = query_db("SELECT subject_id, subject_name, subject_code FROM subjects WHERE dept_id = %s AND is_active = TRUE ORDER BY subject_code", (hod_dept_id,))
+    
+    # Fetch active teachers from HOD's department
+    teachers = query_db("SELECT user_id, full_name FROM users WHERE dept_id = %s AND role = 'Teacher' AND is_active = TRUE ORDER BY full_name", (hod_dept_id,))
+    
+    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+    if request.method == 'POST':
+        subject_id = request.form.get('subject_id', type=int)
+        teacher_id = request.form.get('teacher_id', type=int)
+        division = request.form.get('division', '').strip().upper()
+        day_of_week = request.form.get('day_of_week', type=int)
+        start_time = request.form.get('start_time')
+        end_time = request.form.get('end_time')
+        academic_year = request.form.get('academic_year', '').strip()
+        classroom = request.form.get('classroom', '').strip() or None
+        is_active = True
+        error = None
+
+        if not all([subject_id, teacher_id, division, academic_year]) or day_of_week is None or not start_time or not end_time:
+            error = "All fields except Classroom are required."
+        elif day_of_week < 0 or day_of_week > 6:
+             error = "Invalid day selected."
+        elif start_time >= end_time:
+             error = "Start time must be before end time."
+
+        if error is None:
+            try:
+                execute_db("""
+                    INSERT INTO class_schedules (subject_id, teacher_id, division, day_of_week, start_time, end_time, academic_year, classroom, is_active)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, (subject_id, teacher_id, division, day_of_week, start_time, end_time, academic_year, classroom, is_active))
+                flash("Class schedule added successfully.", "success")
+                return redirect(url_for('.manage_schedules'))
+            except Exception as e:
+                 error = f"Database error adding schedule: {e}"
+                 current_app.logger.error(f"Error adding schedule by HOD {g.user['username']}: {e}", exc_info=True)
+
+        flash(error, 'error')
+        return render_template('hod/add_schedule.html', subjects=subjects or [], teachers=teachers or [], days=days, form_data=request.form)
+
+    return render_template('hod/add_schedule.html', subjects=subjects or [], teachers=teachers or [], days=days)
+
+
 @hod_bp.route('/schedules')
 @login_required
 @role_required('HOD')

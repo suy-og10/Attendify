@@ -8,15 +8,16 @@ import os
 from .attendance_logic import generate_embedding_for_student, clear_embedding_cache
 import mysql.connector
 from werkzeug.utils import secure_filename  # You use this in process_and_save_embeddings
-def add_single_student(prn, name, roll_no, division, dept_id, academic_year, email, phone, image_files=None):
-    """Adds a single student and optionally their face embeddings from files."""
+from werkzeug.security import generate_password_hash
+def add_single_student(prn, name, roll_no, division, dept_id, academic_year, email, phone, username, password, image_files=None):
+    """Adds a single student, creates their user login account, and optionally saves face embeddings."""
     db = get_db()
     error = None
     student_id = None
 
     # 1. Validate inputs (basic)
-    if not prn or not name or not dept_id or not academic_year or not division:
-        return None, "Missing required student details (PRN, Name, Division, Dept, Year)."
+    if not prn or not name or not dept_id or not academic_year or not division or not username or not password:
+        return None, "Missing required student details (PRN, Name, Division, Dept, Year, Username, Password)."
 
     # 2. Check if PRN already exists
     existing_prn = query_db("SELECT student_id FROM students WHERE prn = %s", (prn,), one=True)
@@ -27,13 +28,28 @@ def add_single_student(prn, name, roll_no, division, dept_id, academic_year, ema
          return None, f"Email '{email}' is already in use."
 
 
-    # 3. Insert Student into Database
+    # 3. Check if Username already exists in users table
+    existing_username = query_db("SELECT user_id FROM users WHERE username = %s", (username,), one=True)
+    if existing_username:
+         return None, f"Username '{username}' is already taken."
+
+    # 4. Insert User and Student into Database
     try:
-        # Use execute_db which handles commit/rollback
+        # First, create the User login account
+        hashed_password = generate_password_hash(password)
+        new_user_id = execute_db(
+            "INSERT INTO users (username, password_hash, full_name, email, role, dept_id, is_active) VALUES (%s, %s, %s, %s, %s, %s, TRUE)",
+            (username, hashed_password, name, email, 'Student', dept_id)
+        )
+        
+        if not new_user_id:
+             raise Exception("Database did not return a new user ID after insert.")
+
+        # Then, create the Student record linked to this user_id
         student_id = execute_db(
-            """INSERT INTO students (prn, student_name, roll_no, division, dept_id, academic_year, email, phone)
-               VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
-            (prn, name, roll_no, division, dept_id, academic_year, email, phone)
+            """INSERT INTO students (prn, student_name, roll_no, division, dept_id, academic_year, email, phone, user_id)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+            (prn, name, roll_no, division, dept_id, academic_year, email, phone, new_user_id)
         )
         # execute_db (if modified as discussed) should return the lastrowid
         if not student_id:
