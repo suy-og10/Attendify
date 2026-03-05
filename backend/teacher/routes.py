@@ -166,13 +166,14 @@ def add_student():
                     flash("File processed but no new valid students were added.", "info")
                     return redirect(url_for('teacher.list_students'))
 
-        # --- Handle Single Student Add ---
         elif request.form.get('prn'):
             prn = request.form.get('prn').strip()
             name = request.form.get('student_name').strip()
+            username = request.form.get('student_username').strip()
+            password = request.form.get('student_password')
             
-            if not prn or not name or not request.form.get('division') or not request.form.get('academic_year'):
-                 flash("Name, PRN, Division, and Academic Year are required for single student add.", "error")
+            if not prn or not name or not request.form.get('division') or not request.form.get('academic_year') or not username or not password:
+                 flash("Name, PRN, Username, Password, Division, and Academic Year are required for single student add.", "error")
                  return render_template('add_student.html', departments=departments, teacher_dept_id=teacher_dept_id, form_data=request.form)
 
             roll_no = request.form.get('roll_no', '').strip() or None
@@ -193,9 +194,10 @@ def add_student():
             if file_errors:
                  flash("Some files were skipped due to invalid type (Allowed: png, jpg, jpeg).", "warning")
 
-            # Call logic function with the plural 'image_files' argument
+            # Call logic function with the plural 'image_files' argument and new credentials
             student_id, error = add_single_student(
                 prn, name, roll_no, division, form_dept_id, academic_year, email, phone,
+                username, password,
                 image_files=image_files_to_process # Use 'image_files' (plural)
             )
 
