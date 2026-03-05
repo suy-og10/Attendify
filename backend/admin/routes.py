@@ -53,3 +53,20 @@ def reject_hod(user_id):
     return redirect(url_for('admin.dashboard'))
 
 # --- Add other admin routes below ---
+
+@admin_bp.route('/departments')
+@login_required
+@role_required('Admin')
+def departments():
+    departments_list = query_db("SELECT * FROM departments ORDER BY created_at DESC")
+    return render_template('departments.html', user=g.user, departments=departments_list)
+
+@admin_bp.route('/users')
+@login_required
+@role_required('Admin')
+def users():
+    hods = query_db("SELECT u.*, d.dept_name FROM users u LEFT JOIN departments d ON u.dept_id = d.dept_id WHERE u.role = 'HOD' ORDER BY u.created_at DESC")
+    teachers = query_db("SELECT u.*, d.dept_name FROM users u LEFT JOIN departments d ON u.dept_id = d.dept_id WHERE u.role = 'Teacher' ORDER BY u.created_at DESC")
+    students = query_db("SELECT s.*, d.dept_name FROM students s LEFT JOIN departments d ON s.dept_id = d.dept_id ORDER BY s.created_at DESC")
+    
+    return render_template('users.html', user=g.user, hods=hods, teachers=teachers, students=students)
