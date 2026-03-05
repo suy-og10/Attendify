@@ -218,6 +218,8 @@ def manage_schedules():
                  schedule_dict['day_name'] = 'Invalid Day'
             schedules_with_day_names.append(schedule_dict)
 
+    return render_template('hod/manage_schedules.html', schedules=schedules_with_day_names)
+
 
 @hod_bp.route('/reports/department', methods=['GET', 'POST'])
 @login_required
