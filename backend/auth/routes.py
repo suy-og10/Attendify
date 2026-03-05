@@ -113,8 +113,8 @@ def register():
         role = request.form.get('role', 'HOD') # Default to HOD if missing
         dept_id = request.form.get('dept_id', type=int)
         
-        # HODs are active by default (requiring Admin approve ideally, but keeping it simple or HODs are active, let's keep HOD active for now or we make them inactive too. The prompt said: "The Admin currently approves HODs. This logic should be mirrored for Teachers. Change: Update auth_bp.register so that when a 'Teacher' registers, they are is_active = False by default.")
-        is_active = True if role != 'Teacher' else False
+        # Both HODs and Teachers require approval.
+        is_active = False
         error = None
 
         # --- Validation ---
@@ -140,7 +140,8 @@ def register():
                 )
                 current_app.logger.info(f"New user registration: {username} ({role}), is_active: {is_active}.")
                 if not is_active:
-                    flash('Registration successful! Your account needs HOD approval.', 'success')
+                    approval_role = 'Administrator' if role == 'HOD' else 'HOD'
+                    flash(f'Registration successful! Your account needs {approval_role} approval.', 'success')
                 else:
                     flash('Registration successful! You can now log in.', 'success')
                 return redirect(url_for("auth.login"))
