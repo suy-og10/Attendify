@@ -18,6 +18,90 @@
     </a>
 </div>
 
+<!-- Filters Bar -->
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6">
+    <form method="GET" action="{{ url_for('teacher.list_students') }}" class="flex flex-wrap items-end gap-4">
+        <!-- Search -->
+        <div class="flex-1 min-w-[200px]">
+            <label for="search" class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Search Students</label>
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                    <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                </div>
+                <input type="text" name="search" id="search" value="{{ filters.search }}" 
+                       placeholder="Search by Name, PRN, or Roll No..."
+                       class="block w-full pl-9 pr-3 py-2 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 transition-all">
+            </div>
+        </div>
+
+        <!-- Academic Year -->
+        <div class="w-44">
+            <label for="academic_year" class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Academic Year</label>
+            <div class="relative">
+                <select name="academic_year" id="academic_year" onchange="this.form.submit()"
+                        class="block w-full pl-3 pr-10 py-2 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 transition-all appearance-none">
+                    <option value="">All Years</option>
+                    {% for year in academic_years %}
+                    <option value="{{ year.academic_year }}" {% if filters.academic_year == year.academic_year %}selected{% endif %}>
+                        {{ year.academic_year }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-400">
+                    <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Department -->
+        <div class="w-48">
+            <label for="dept_id" class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Department</label>
+            <div class="relative">
+                <select name="dept_id" id="dept_id" onchange="this.form.submit()"
+                        class="block w-full pl-3 pr-10 py-2 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 transition-all appearance-none">
+                    <option value="">All Departments</option>
+                    {% for dept in departments %}
+                    <option value="{{ dept.dept_id }}" {% if filters.dept_id == dept.dept_id %}selected{% endif %}>
+                        {{ dept.dept_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-400">
+                    <i class="fa-solid fa-building text-[10px]"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Division -->
+        <div class="w-32">
+            <label for="division" class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Division</label>
+            <div class="relative">
+                <select name="division" id="division" onchange="this.form.submit()"
+                        class="block w-full pl-3 pr-10 py-2 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 transition-all appearance-none">
+                    <option value="">All Divs</option>
+                    {% for div in divisions %}
+                    <option value="{{ div.division }}" {% if filters.division == div.division %}selected{% endif %}>
+                        Division {{ div.division }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-400">
+                    <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reset Button -->
+        <a href="{{ url_for('teacher.list_students') }}" 
+           class="h-[38px] px-4 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-500 rounded-xl transition-colors"
+           title="Clear Filters">
+            <i class="fa-solid fa-rotate-left"></i>
+        </a>
+        
+        <button type="submit" class="hidden">Filter</button>
+    </form>
+</div>
+
 <div class="section-card overflow-hidden">
     {% if students %}
     <div class="overflow-x-auto">

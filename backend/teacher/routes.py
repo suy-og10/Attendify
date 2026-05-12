@@ -105,22 +105,69 @@ def add_schedule():
 @role_required('Teacher')
 def list_students():
     teacher_dept_id = g.user.get('dept_id') if g.user else None
+    
+    # Get filter params
+    division_filter = request.args.get('division')
+    year_filter = request.args.get('academic_year')
+    dept_filter = request.args.get('dept_id', type=int)
+    search_query = request.args.get('search', '').strip()
+
+    # Base query
     students_query = """
-        SELECT s.student_id, s.prn, s.student_name, s.roll_no, s.division, s.academic_year, d.dept_code,
+        SELECT s.student_id, s.prn, s.student_name, s.roll_no, s.division, s.academic_year, d.dept_code, d.dept_name,
                (SELECT COUNT(embedding_id) FROM face_embeddings WHERE student_id = s.student_id AND is_active = TRUE) as embedding_count
         FROM students s
         JOIN departments d ON s.dept_id = d.dept_id
         WHERE s.is_active = TRUE
     """
     params = []
-    if teacher_dept_id:
+    
+    # If a specific dept filter is applied, use it. Otherwise, default to teacher's dept.
+    if dept_filter:
+        students_query += " AND s.dept_id = %s"
+        params.append(dept_filter)
+    elif teacher_dept_id:
         students_query += " AND s.dept_id = %s" 
         params.append(teacher_dept_id)
+        
+    if division_filter:
+        students_query += " AND s.division = %s"
+        params.append(division_filter)
+        
+    if year_filter:
+        students_query += " AND s.academic_year = %s"
+        params.append(year_filter)
+        
+    if search_query:
+        students_query += " AND (s.student_name LIKE %s OR s.prn LIKE %s OR s.roll_no LIKE %s)"
+        search_param = f"%{search_query}%"
+        params.extend([search_param, search_param, search_param])
 
     students_query += " ORDER BY s.academic_year, s.division, s.roll_no, s.student_name"
 
     students = query_db(students_query, params)
-    return render_template('student_list.html', students=students)
+    
+    # Fetch available filter options
+    # We fetch divisions and years based on the CURRENT department context (either the filter or teacher's dept)
+    context_dept_id = dept_filter if dept_filter else teacher_dept_id
+    
+    divisions = query_db("SELECT DISTINCT division FROM students WHERE dept_id = %s AND is_active = TRUE ORDER BY division", (context_dept_id,))
+    academic_years = query_db("SELECT DISTINCT academic_year FROM students WHERE dept_id = %s AND is_active = TRUE ORDER BY academic_year DESC", (context_dept_id,))
+    departments = query_db("SELECT dept_id, dept_name, dept_code FROM departments ORDER BY dept_name")
+
+    return render_template('teacher/student_list.html', 
+                           students=students, 
+                           divisions=divisions, 
+                           academic_years=academic_years,
+                           departments=departments,
+                           filters={
+                               'division': division_filter,
+                               'academic_year': year_filter,
+                               'dept_id': dept_filter,
+                               'search': search_query
+                           })
+
+
 
 
 @teacher_bp.route('/students/add', methods=['GET', 'POST'])
