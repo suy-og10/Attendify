@@ -120,9 +120,61 @@ def approve_teacher(teacher_id):
         flash(f"Error approving teacher: {e}", "error")
         current_app.logger.error(f"Error approving Teacher ID {teacher_id} by HOD {g.user['username']}: {e}", exc_info=True)
     return redirect(url_for('.dashboard'))
+    
+@hod_bp.route('/edit_teacher/<int:teacher_id>', methods=['GET', 'POST'])
+@login_required
+@role_required('HOD')
+def edit_teacher(teacher_id):
+    hod_dept_id = session.get('dept_id')
+    teacher = query_db("SELECT user_id, full_name, username, email, is_active FROM users WHERE user_id = %s AND dept_id = %s AND role = 'Teacher'", (teacher_id, hod_dept_id), one=True)
+    
+    if not teacher:
+        flash("Teacher not found or access denied.", "error")
+        return redirect(url_for('.dashboard'))
+
+    if request.method == 'POST':
+        full_name = request.form.get('full_name', '').strip()
+        email = request.form.get('email', '').strip().lower() or None
+        is_active = request.form.get('is_active') == 'on'
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+        
+        error = None
+        if not full_name:
+            error = 'Full name is required.'
+        elif password and password != confirm_password:
+            error = 'Passwords do not match.'
+        elif email:
+            existing_email = query_db('SELECT user_id FROM users WHERE email = %s AND user_id != %s', (email, teacher_id), one=True)
+            if existing_email:
+                error = f"Email '{email}' is already in use by another user."
+
+        if error is None:
+            try:
+                if password:
+                    execute_db(
+                        "UPDATE users SET full_name = %s, email = %s, is_active = %s, password_hash = %s WHERE user_id = %s",
+                        (full_name, email, is_active, generate_password_hash(password), teacher_id)
+                    )
+                else:
+                    execute_db(
+                        "UPDATE users SET full_name = %s, email = %s, is_active = %s WHERE user_id = %s",
+                        (full_name, email, is_active, teacher_id)
+                    )
+                flash(f"Teacher '{full_name}' updated successfully.", "success")
+                return redirect(url_for('.dashboard'))
+            except Exception as e:
+                error = f"Database error updating teacher: {e}"
+                current_app.logger.error(f"Error updating teacher {teacher_id}: {e}", exc_info=True)
+
+        flash(error, 'error')
+        # Re-populate with submitted data for the form
+        teacher_data = {**teacher, 'full_name': full_name, 'email': email, 'is_active': is_active}
+        return render_template('hod/edit_teacher.html', teacher=teacher_data)
+
+    return render_template('hod/edit_teacher.html', teacher=teacher)
 
 
-# --- Subject Management ---
 
 @hod_bp.route('/subjects')
 @login_required
@@ -185,6 +237,51 @@ def add_subject():
 
     # GET Request
     return render_template('add_subject.html')
+
+@hod_bp.route('/edit_subject/<int:subject_id>', methods=['GET', 'POST'])
+@login_required
+@role_required('HOD')
+def edit_subject(subject_id):
+    hod_dept_id = session.get('dept_id')
+    subject = query_db("SELECT subject_id, subject_code, subject_name, semester, is_active FROM subjects WHERE subject_id = %s AND dept_id = %s", (subject_id, hod_dept_id), one=True)
+    
+    if not subject:
+        flash("Subject not found or access denied.", "error")
+        return redirect(url_for('.manage_subjects'))
+
+    if request.method == 'POST':
+        code = request.form.get('subject_code', '').strip().upper()
+        name = request.form.get('subject_name', '').strip()
+        semester = request.form.get('semester', type=int)
+        is_active = request.form.get('is_active') == 'on'
+        
+        error = None
+        if not code: error = "Subject code is required."
+        elif not name: error = "Subject name is required."
+        elif semester is None or semester < 1: error = "Valid semester is required."
+        else:
+            existing = query_db("SELECT subject_id FROM subjects WHERE subject_code = %s AND dept_id = %s AND subject_id != %s", (code, hod_dept_id, subject_id), one=True)
+            if existing:
+                error = f"Subject code '{code}' already exists in your department."
+
+        if error is None:
+            try:
+                execute_db(
+                    "UPDATE subjects SET subject_code = %s, subject_name = %s, semester = %s, is_active = %s WHERE subject_id = %s",
+                    (code, name, semester, is_active, subject_id)
+                )
+                flash(f"Subject '{name}' updated successfully.", "success")
+                return redirect(url_for('.manage_subjects'))
+            except Exception as e:
+                error = f"Database error updating subject: {e}"
+                current_app.logger.error(f"Error updating subject {subject_id}: {e}", exc_info=True)
+
+        flash(error, 'error')
+        subject_data = {**subject, 'subject_code': code, 'subject_name': name, 'semester': semester, 'is_active': is_active}
+        return render_template('hod/edit_subject.html', subject=subject_data)
+
+    return render_template('hod/edit_subject.html', subject=subject)
+
 
 
 # --- Schedule Management ---
@@ -273,6 +370,65 @@ def manage_schedules():
             schedules_with_day_names.append(schedule_dict)
 
     return render_template('hod/manage_schedules.html', schedules=schedules_with_day_names)
+
+@hod_bp.route('/edit_schedule/<int:schedule_id>', methods=['GET', 'POST'])
+@login_required
+@role_required('HOD')
+def edit_schedule(schedule_id):
+    hod_dept_id = session.get('dept_id')
+    schedule = query_db("SELECT * FROM class_schedules WHERE schedule_id = %s", (schedule_id,), one=True)
+    
+    if not schedule:
+        flash("Schedule not found.", "error")
+        return redirect(url_for('.manage_schedules'))
+    
+    # Verify the schedule belongs to HOD's department via subject
+    subject = query_db("SELECT dept_id FROM subjects WHERE subject_id = %s", (schedule['subject_id'],), one=True)
+    if not subject or subject['dept_id'] != hod_dept_id:
+        flash("Access denied.", "error")
+        return redirect(url_for('.manage_schedules'))
+
+    # Fetch subjects and teachers for the dropdowns
+    subjects = query_db("SELECT subject_id, subject_name, subject_code FROM subjects WHERE dept_id = %s AND is_active = TRUE ORDER BY subject_code", (hod_dept_id,))
+    teachers = query_db("SELECT user_id, full_name FROM users WHERE dept_id = %s AND role = 'Teacher' AND is_active = TRUE ORDER BY full_name", (hod_dept_id,))
+    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+    if request.method == 'POST':
+        subject_id = request.form.get('subject_id', type=int)
+        teacher_id = request.form.get('teacher_id', type=int)
+        division = request.form.get('division', '').strip().upper()
+        day_of_week = request.form.get('day_of_week', type=int)
+        start_time = request.form.get('start_time')
+        end_time = request.form.get('end_time')
+        academic_year = request.form.get('academic_year', '').strip()
+        classroom = request.form.get('classroom', '').strip() or None
+        is_active = request.form.get('is_active') == 'on'
+        
+        error = None
+        if not all([subject_id, teacher_id, division, academic_year]) or day_of_week is None or not start_time or not end_time:
+            error = "All fields except Classroom are required."
+        elif start_time >= end_time:
+             error = "Start time must be before end time."
+
+        if error is None:
+            try:
+                execute_db("""
+                    UPDATE class_schedules 
+                    SET subject_id = %s, teacher_id = %s, division = %s, day_of_week = %s, 
+                        start_time = %s, end_time = %s, academic_year = %s, classroom = %s, is_active = %s
+                    WHERE schedule_id = %s
+                """, (subject_id, teacher_id, division, day_of_week, start_time, end_time, academic_year, classroom, is_active, schedule_id))
+                flash("Class schedule updated successfully.", "success")
+                return redirect(url_for('.manage_schedules'))
+            except Exception as e:
+                error = f"Database error updating schedule: {e}"
+                current_app.logger.error(f"Error updating schedule {schedule_id}: {e}", exc_info=True)
+
+        flash(error, 'error')
+        return render_template('hod/edit_schedule.html', schedule=request.form, subjects=subjects, teachers=teachers, days=days)
+
+    return render_template('hod/edit_schedule.html', schedule=schedule, subjects=subjects, teachers=teachers, days=days)
+
 
 
 @hod_bp.route('/reports/department', methods=['GET', 'POST'])

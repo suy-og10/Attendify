@@ -54,7 +54,7 @@
                         {% endif %}
                     </td>
                     <td class="px-6 py-4 text-right">
-                        <a href="#"
+                        <a href="{{ url_for('hod.edit_subject', subject_id=subject.subject_id) }}"
                             class="w-8 h-8 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-600 inline-flex items-center justify-center transition-colors">
                             <i class="fa-solid fa-pen-to-square text-xs"></i>
                         </a>
