@@ -38,9 +38,9 @@ def seed_database():
 
             users = [
                 ('admin', admin_hash, 'System Admin', 'admin@attendify.local', 'Admin', None, True),
-                ('hod_cs', hod_hash, 'Dr. Alan Turing', 'hod_cs@attendify.local', 'HOD', cs_id, True),
-                ('teacher1', teacher_hash, 'Prof. Ada Lovelace', 'ada@attendify.local', 'Teacher', cs_id, True),
-                ('teacher2', teacher_hash, 'Prof. Grace Hopper', 'grace@attendify.local', 'Teacher', cs_id, True)
+                ('hod_cs', hod_hash, 'Dr. Rajesh Sharma', 'hod_cs@attendify.local', 'HOD', cs_id, True),
+                ('teacher1', teacher_hash, 'Prof. Sneha Kulkarni', 'sneha@attendify.local', 'Teacher', cs_id, True),
+                ('teacher2', teacher_hash, 'Prof. Vikram Mehta', 'vikram@attendify.local', 'Teacher', cs_id, True)
             ]
             
             teacher_ids = []
@@ -55,11 +55,11 @@ def seed_database():
             # 3. Students
             print("Creating students...")
             students = [
-                ('CS2101', 'Alice Smith', 'Roll-01', 'A', cs_id, '2023-2024', 'alice@student.local', '1234567890'),
-                ('CS2102', 'Bob Johnson', 'Roll-02', 'A', cs_id, '2023-2024', 'bob@student.local', '1234567891'),
-                ('CS2103', 'Charlie Brown', 'Roll-03', 'A', cs_id, '2023-2024', 'charlie@student.local', '1234567892'),
-                ('CS2104', 'Diana Prince', 'Roll-04', 'A', cs_id, '2023-2024', 'diana@student.local', '1234567893'),
-                ('CS2105', 'Evan Wright', 'Roll-05', 'B', cs_id, '2023-2024', 'evan@student.local', '1234567894'),
+                ('CS2101', 'Aarav Patil', 'Roll-01', 'A', cs_id, 'TE', 'aarav@student.local', '9876543210'),
+                ('CS2102', 'Ishani Deshmukh', 'Roll-02', 'A', cs_id, 'TE', 'ishani@student.local', '9876543211'),
+                ('CS2103', 'Rohan Joshi', 'Roll-03', 'A', cs_id, 'SE', 'rohan@student.local', '9876543212'),
+                ('CS2104', 'Ananya Iyer', 'Roll-04', 'A', cs_id, 'SE', 'ananya@student.local', '9876543213'),
+                ('CS2105', 'Sahil More', 'Roll-05', 'B', cs_id, 'FE', 'sahil@student.local', '9876543214'),
             ]
             for s in students:
                 cursor.execute(
@@ -91,9 +91,9 @@ def seed_database():
             # We'll create one schedule for today for teacher1
             schedules = [
                 # subject_id, teacher_id, division, day_of_week, start_time, end_time, academic_year, classroom
-                (subject_ids[0], teacher_ids[0], 'A', today_day_of_week, '09:00:00', '10:30:00', '2023-2024', 'Room 101'), # DB
-                (subject_ids[1], teacher_ids[0], 'A', today_day_of_week, '11:00:00', '12:30:00', '2023-2024', 'Room 102'), # OS
-                (subject_ids[2], teacher_ids[1], 'B', (today_day_of_week + 1) % 7, '10:00:00', '11:30:00', '2023-2024', 'Room 201') # AI tomorrow
+                (subject_ids[0], teacher_ids[0], 'A', today_day_of_week, '09:00:00', '10:30:00', 'TE', 'Room 101'), # DB
+                (subject_ids[1], teacher_ids[0], 'A', today_day_of_week, '11:00:00', '12:30:00', 'TE', 'Room 102'), # OS
+                (subject_ids[2], teacher_ids[1], 'B', (today_day_of_week + 1) % 7, '10:00:00', '11:30:00', 'FE', 'Room 201') # AI tomorrow
             ]
             
             for sched in schedules:

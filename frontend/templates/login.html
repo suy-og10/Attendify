@@ -81,8 +81,8 @@
                     <span class="font-black text-indigo-700 text-lg">Attendify</span>
                 </div>
                 {% if role %}
-                <h2 class="text-3xl font-black text-gray-900 mb-1">{{ role }} Login</h2>
-                <p class="text-gray-500 text-sm">Sign in with your {{ role.lower() }} credentials</p>
+                <h2 class="text-3xl font-black text-gray-900 mb-1">{{ 'ERP Coordinator' if role == 'HOD' else role }} Login</h2>
+                <p class="text-gray-500 text-sm">Sign in with your {{ ('ERP Coordinator' if role == 'HOD' else role).lower() }} credentials</p>
                 {% else %}
                 <h2 class="text-3xl font-black text-gray-900 mb-1">Welcome back!</h2>
                 <p class="text-gray-500 text-sm">Sign in to access your dashboard</p>
@@ -125,7 +125,7 @@
                 <p class="text-center text-sm text-gray-500 mt-4">
                     First time here?
                     <a href="{{ url_for('auth.register') }}"
-                        class="text-indigo-600 hover:text-indigo-800 font-semibold">Register as HOD</a>
+                        class="text-indigo-600 hover:text-indigo-800 font-semibold">Register as ERP Coordinator</a>
                 </p>
             </form>
         </div>

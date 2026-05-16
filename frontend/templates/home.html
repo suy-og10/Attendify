@@ -14,7 +14,7 @@
             </div>
             {% if g.user %}
             <span class="text-white/80 text-sm font-medium px-3 py-1 bg-white/15 rounded-full">
-                {{ g.user.role }}
+                {{ 'ERP Coordinator' if g.user.role == 'HOD' else g.user.role }}
             </span>
             {% endif %}
         </div>
@@ -34,7 +34,7 @@
             {% elif g.user.role == 'HOD' %}
             <a href="{{ url_for('hod.dashboard') }}"
                 class="inline-flex items-center gap-2 bg-white text-indigo-700 font-bold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all text-sm">
-                <i class="fa-solid fa-gauge-high"></i> Go to HOD Dashboard
+                <i class="fa-solid fa-gauge-high"></i> Go to ERP Coordinator Dashboard
             </a>
             {% elif g.user.role == 'Teacher' %}
             <a href="{{ url_for('teacher.dashboard') }}"
@@ -80,7 +80,7 @@
             <i class="fa-solid fa-calendar-days text-white text-xl"></i>
         </div>
         <h3 class="text-base font-bold text-gray-900 mb-1">Smart Scheduling</h3>
-        <p class="text-gray-500 text-sm leading-relaxed">HODs manage timetables, assign teachers to subjects, and
+        <p class="text-gray-500 text-sm leading-relaxed">ERP Coordinators manage timetables, assign teachers to subjects, and
             configure weekly schedules.</p>
     </div>
 </div>

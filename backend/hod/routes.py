@@ -5,6 +5,7 @@ from backend.utils import login_required, role_required
 from werkzeug.security import generate_password_hash
 # Import the teacher's reporting logic
 from backend.teacher.reporting_logic import generate_attendance_excel
+import datetime
 
 hod_bp = Blueprint('hod', __name__, template_folder='../../frontend/templates/hod', url_prefix='/hod')
 # In: backend/hod/routes.py
@@ -17,45 +18,41 @@ hod_bp = Blueprint('hod', __name__, template_folder='../../frontend/templates/ho
 def dashboard():
     hod_dept_id = g.user.get('dept_id')
     
-    # --- FIX: Added queries for department_name and teachers ---
-    
     # Get department name
     dept_info = query_db("SELECT dept_name FROM departments WHERE dept_id = %s", (hod_dept_id,), one=True)
     department_name = dept_info['dept_name'] if dept_info else "Unknown Department"
 
-    # Get teacher list (active only)
-    teachers = query_db("""
-        SELECT user_id, full_name, username, email, is_active 
-        FROM users 
-        WHERE dept_id = %s AND role = 'Teacher' AND is_active = TRUE
-        ORDER BY full_name
+    # Get teacher list (all) with their assigned subjects and years
+    teachers_list = query_db("""
+        SELECT u.user_id, u.full_name, u.username, u.email, u.is_active,
+               GROUP_CONCAT(DISTINCT s.subject_name SEPARATOR ', ') as subjects_taught,
+               GROUP_CONCAT(DISTINCT cs.academic_year SEPARATOR ', ') as years_assigned
+        FROM users u
+        LEFT JOIN class_schedules cs ON u.user_id = cs.teacher_id
+        LEFT JOIN subjects s ON cs.subject_id = s.subject_id
+        WHERE u.dept_id = %s AND u.role = 'Teacher'
+        GROUP BY u.user_id
+        ORDER BY u.is_active ASC, u.full_name ASC
     """, (hod_dept_id,))
 
-    # Get pending teachers
-    pending_teachers = query_db("""
-        SELECT user_id, full_name, username, email, created_at
-        FROM users 
-        WHERE dept_id = %s AND role = 'Teacher' AND is_active = FALSE
-        ORDER BY created_at
-    """, (hod_dept_id,))
+    # Get all active subjects in department for filtering
+    all_dept_subjects = query_db("SELECT subject_id, subject_name FROM subjects WHERE dept_id = %s AND is_active = TRUE", (hod_dept_id,))
 
-    # Get stats
-    stats = query_db("""
+    # Fetch summary statistics
+    stats_data = query_db("""
         SELECT 
             (SELECT COUNT(*) FROM users WHERE dept_id = %s AND role = 'Teacher' AND is_active = TRUE) as teacher_count,
+            (SELECT COUNT(*) FROM users WHERE dept_id = %s AND role = 'Teacher' AND is_active = FALSE) as pending_count,
             (SELECT COUNT(*) FROM students WHERE dept_id = %s AND is_active = TRUE) as student_count,
             (SELECT COUNT(*) FROM subjects WHERE dept_id = %s AND is_active = TRUE) as subject_count
-    """, (hod_dept_id, hod_dept_id, hod_dept_id), one=True)
+    """, (hod_dept_id, hod_dept_id, hod_dept_id, hod_dept_id), one=True)
     
-    # --- END OF FIX ---
-    
-    # Pass all required variables to the template
     return render_template(
         'hod/dashboard.html', 
         user=g.user, 
-        stats=stats, 
-        teachers=teachers, 
-        pending_teachers=pending_teachers,
+        stats=stats_data, 
+        teachers=teachers_list, 
+        dept_subjects=all_dept_subjects,
         department_name=department_name
     )
 
@@ -322,13 +319,41 @@ def add_schedule():
         elif start_time >= end_time:
              error = "Start time must be before end time."
 
+        deploy_start_str = request.form.get('deploy_start')
+        deploy_end_str = request.form.get('deploy_end')
+
         if error is None:
             try:
-                execute_db("""
+                schedule_id = execute_db("""
                     INSERT INTO class_schedules (subject_id, teacher_id, division, day_of_week, start_time, end_time, academic_year, classroom, is_active)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, (subject_id, teacher_id, division, day_of_week, start_time, end_time, academic_year, classroom, is_active))
-                flash("Class schedule added successfully.", "success")
+                
+                msg = "Class schedule added successfully."
+                
+                # --- Immediate Bulk Deployment ---
+                if deploy_start_str and deploy_end_str:
+                    try:
+                        d_start = datetime.datetime.strptime(deploy_start_str, '%Y-%m-%d').date()
+                        d_end = datetime.datetime.strptime(deploy_end_str, '%Y-%m-%d').date()
+                        
+                        generated_count = 0
+                        current_date = d_start
+                        while current_date <= d_end:
+                            if current_date.weekday() == day_of_week:
+                                execute_db("""
+                                    INSERT IGNORE INTO class_sessions (schedule_id, session_date, status)
+                                    VALUES (%s, %s, 'SCHEDULED')
+                                """, (schedule_id, current_date))
+                                generated_count += 1
+                            current_date += datetime.timedelta(days=1)
+                        
+                        msg += f" and {generated_count} sessions deployed."
+                    except Exception as deploy_err:
+                        current_app.logger.error(f"Error in immediate deployment for schedule {schedule_id}: {deploy_err}")
+                        msg += " (Session deployment failed, but schedule was saved)"
+
+                flash(msg, "success")
                 return redirect(url_for('.manage_schedules'))
             except Exception as e:
                  error = f"Database error adding schedule: {e}"
@@ -516,3 +541,4 @@ def department_report():
         academic_years=academic_years,
         teachers=teachers
     )
+

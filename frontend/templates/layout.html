@@ -495,7 +495,7 @@
                     <div class="nav-avatar">{{ g.user.full_name[0] | upper }}</div>
                     <div class="hidden sm:flex flex-col leading-tight">
                         <span class="text-white text-xs font-semibold">{{ g.user.full_name.split(' ')[0] }}</span>
-                        <span class="nav-role-badge">{{ g.user.role }}</span>
+                        <span class="nav-role-badge">{{ 'ERP Coordinator' if g.user.role == 'HOD' else g.user.role }}</span>
                     </div>
                 </div>
                 <!-- Role dashboard link -->
