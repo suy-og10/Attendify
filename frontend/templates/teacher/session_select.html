@@ -86,8 +86,94 @@
             <i class="fa-solid fa-calendar-xmark text-indigo-300 text-3xl"></i>
         </div>
         <h3 class="text-gray-700 font-semibold mb-1">No classes scheduled today</h3>
-        <p class="text-gray-400 text-sm">Contact your HOD to update your schedule.</p>
+        <p class="text-gray-400 text-sm">Contact your ERP Coordinator to update your schedule.</p>
     </div>
     {% endif %}
 </div>
+
+<!-- All Sessions History -->
+<div class="section-card mt-8">
+    <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 grad-sky rounded-xl flex items-center justify-center shadow">
+                <i class="fa-solid fa-history text-white text-base"></i>
+            </div>
+            <div>
+                <h2 class="text-base font-bold text-gray-900">All Available Sessions</h2>
+                <p class="text-xs text-gray-500">History of all classes in your timetable</p>
+            </div>
+        </div>
+        <div class="relative w-64">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+            <input type="text" id="sessionSearch" placeholder="Filter by date, subject..."
+                class="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+        </div>
+    </div>
+
+    {% if all_sessions %}
+    <div class="divide-y divide-gray-50" id="allSessionsList">
+        {% for session in all_sessions %}
+        <div class="session-item flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-6 py-5 hover:bg-gray-50 transition-colors"
+             data-search="{{ session.session_date }} {{ session.subject_name }} {{ session.subject_code }}">
+            <div class="flex items-center gap-4">
+                <!-- Date chip -->
+                <div class="flex-shrink-0 text-center bg-gray-100 rounded-xl px-3 py-2 min-w-[90px]">
+                    <p class="text-gray-900 text-[10px] font-black uppercase tracking-tighter">{{ session.session_date.strftime('%d %b') if session.session_date.strftime else session.session_date }}</p>
+                    <p class="text-gray-500 text-[9px] font-bold">{{ session.session_date.year }}</p>
+                </div>
+                <div>
+                    <p class="font-bold text-gray-900 text-sm">{{ session.subject_name }}</p>
+                    <div class="flex items-center flex-wrap gap-1.5 mt-1">
+                        <span class="text-[10px] font-bold text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">{{ session.subject_code }}</span>
+                        <span class="text-[10px] font-bold text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">Div {{ session.division }}</span>
+                        <span class="text-[10px] text-gray-400 font-medium italic">{{ session.start_time }} - {{ session.end_time }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex-shrink-0">
+                {% if session.status == 'COMPLETED' %}
+                <a href="{{ url_for('teacher.view_attendance', session_id=session.session_id) }}"
+                    class="inline-flex items-center gap-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 text-[10px] font-black px-3 py-1.5 rounded-lg transition-all border border-emerald-100">
+                    <i class="fa-solid fa-check-double"></i> VIEW REPORT
+                </a>
+                {% elif session.status == 'ONGOING' %}
+                <a href="{{ url_for('teacher.take_attendance_page', session_id=session.session_id) }}"
+                    class="inline-flex items-center gap-2 bg-amber-500 text-white hover:bg-amber-600 text-[10px] font-black px-3 py-1.5 rounded-lg transition-all shadow-sm">
+                    <i class="fa-solid fa-play"></i> RESUME
+                </a>
+                {% else %}
+                <a href="{{ url_for('teacher.take_attendance_page', session_id=session.session_id) }}"
+                    class="inline-flex items-center gap-2 bg-indigo-600 text-white hover:bg-indigo-700 text-[10px] font-black px-3 py-1.5 rounded-lg transition-all shadow-sm">
+                    <i class="fa-solid fa-play"></i> START
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="p-12 text-center">
+        <p class="text-gray-400 text-xs italic">No deployment history found.</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('sessionSearch');
+    const sessionItems = document.querySelectorAll('.session-item');
+
+    searchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase();
+        sessionItems.forEach(item => {
+            const searchText = item.getAttribute('data-search').toLowerCase();
+            if (searchText.includes(query)) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

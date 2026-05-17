@@ -25,7 +25,7 @@
             <i class="fa-solid fa-user-clock text-white text-base"></i>
         </div>
         <div>
-            <h2 class="text-base font-bold text-gray-900">Pending HOD Approvals</h2>
+            <h2 class="text-base font-bold text-gray-900">Pending ERP Coordinator Approvals</h2>
             <p class="text-xs text-gray-500">Review and approve or reject registration requests</p>
         </div>
         {% if pending_hods %}
@@ -58,7 +58,7 @@
                     </button>
                 </form>
                 <form action="{{ url_for('admin.reject_hod', user_id=hod.user_id) }}" method="POST" class="inline"
-                    onsubmit="return confirm('Reject this HOD registration?');">
+                    onsubmit="return confirm('Reject this ERP Coordinator registration?');">
                     <button type="submit"
                         class="inline-flex items-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold py-2 px-4 rounded-lg transition-all hover:-translate-y-0.5 shadow-sm">
                         <i class="fa-solid fa-xmark"></i> Reject
@@ -106,7 +106,7 @@
             </div>
             <div>
                 <p class="font-semibold text-sm text-gray-800">All Users</p>
-                <p class="text-xs text-gray-400">HODs &amp; Teachers</p>
+                <p class="text-xs text-gray-400">ERP Coordinators &amp; Teachers</p>
             </div>
         </a>
         <a href="#"

@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% block title %}HOD Dashboard — Attendify{% endblock %}
+{% block title %}ERP Coordinator Dashboard — Attendify{% endblock %}
 
 {% block content %}
 <!-- Header -->
@@ -12,7 +12,7 @@
             <i class="fa-solid fa-building-columns text-white text-2xl"></i>
         </div>
         <div>
-            <h1 class="text-2xl font-black text-white">HOD Dashboard</h1>
+            <h1 class="text-2xl font-black text-white">ERP Coordinator Dashboard</h1>
             <p class="text-purple-200 text-sm mt-0.5">
                 Welcome, <span class="font-semibold text-white">{{ g.user.full_name }}</span>
                 &mdash; <span class="text-purple-200">{{ department_name }}</span>
@@ -21,122 +21,198 @@
     </div>
 </div>
 
+<!-- Pending Approvals Alert -->
+{% if stats.pending_count > 0 %}
+<div class="mb-7 bg-white/90 backdrop-blur-md border-l-4 border-amber-400 p-5 rounded-2xl shadow-xl flex items-center justify-between gap-4 animate-pulse">
+    <div class="flex items-center gap-4">
+        <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-user-clock text-amber-600 text-xl"></i>
+        </div>
+        <div>
+            <p class="text-sm text-amber-900 font-black uppercase tracking-tight">
+                {{ stats.pending_count }} Pending Registration{{ 's' if stats.pending_count > 1 else '' }}
+            </p>
+            <p class="text-xs text-amber-700/80 font-medium">New faculty members are waiting for your approval.</p>
+        </div>
+    </div>
+    <button onclick="document.getElementById('statusFilter').value='inactive'; document.getElementById('statusFilter').dispatchEvent(new Event('change'));" 
+            class="bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-black px-4 py-2 rounded-lg transition-all shadow-sm whitespace-nowrap">
+        REVIEW NOW
+    </button>
+</div>
+{% endif %}
+
+
 <!-- Department Management Cards -->
-<div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-7">
-    <a href="{{ url_for('hod.manage_subjects') }}" class="section-card p-6 card-hover flex items-start gap-4">
-        <div class="w-12 h-12 grad-primary rounded-xl flex items-center justify-center flex-shrink-0 shadow-md">
-            <i class="fa-solid fa-book text-white text-lg"></i>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+    <a href="{{ url_for('hod.manage_subjects') }}" class="section-card p-8 card-hover flex flex-col items-start min-h-[220px]">
+        <div class="w-16 h-16 grad-indigo rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-indigo-100">
+            <i class="fa-solid fa-book text-white text-2xl"></i>
         </div>
-        <div>
-            <h3 class="font-bold text-gray-900 text-sm mb-1">Manage Subjects</h3>
-            <p class="text-xs text-gray-500 leading-relaxed">Add new subjects or edit existing ones for your department.
-            </p>
-            <span class="mt-2 inline-flex items-center gap-1 text-indigo-600 text-xs font-semibold">Open <i
-                    class="fa-solid fa-arrow-right text-xs"></i></span>
+        <h3 class="text-xl font-bold text-gray-900 mb-2">Subjects</h3>
+        <p class="text-sm text-gray-500 leading-relaxed mb-6">Manage your department's academic courses and details.</p>
+        <div class="mt-auto flex items-center text-indigo-600 font-black text-sm uppercase tracking-wider group">
+            Manage Subjects <i class="fa-solid fa-arrow-right ml-2 transition-transform group-hover:translate-x-1"></i>
         </div>
     </a>
-    <a href="{{ url_for('hod.manage_schedules') }}" class="section-card p-6 card-hover flex items-start gap-4">
-        <div class="w-12 h-12 grad-emerald rounded-xl flex items-center justify-center flex-shrink-0 shadow-md">
-            <i class="fa-solid fa-calendar-week text-white text-lg"></i>
+
+    <a href="{{ url_for('hod.manage_schedules') }}" class="section-card p-8 card-hover flex flex-col items-start min-h-[220px]">
+        <div class="w-16 h-16 grad-emerald rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-emerald-100">
+            <i class="fa-solid fa-calendar-week text-white text-2xl"></i>
         </div>
-        <div>
-            <h3 class="font-bold text-gray-900 text-sm mb-1">Class Schedules</h3>
-            <p class="text-xs text-gray-500 leading-relaxed">Assign subjects to teachers and set the weekly timetable.
-            </p>
-            <span class="mt-2 inline-flex items-center gap-1 text-emerald-600 text-xs font-semibold">Open <i
-                    class="fa-solid fa-arrow-right text-xs"></i></span>
+        <h3 class="text-xl font-bold text-gray-900 mb-2">Timetable</h3>
+        <p class="text-sm text-gray-500 leading-relaxed mb-6">Configure master weekly slots and session deployments.</p>
+        <div class="mt-auto flex items-center text-emerald-600 font-black text-sm uppercase tracking-wider group">
+            Configure <i class="fa-solid fa-arrow-right ml-2 transition-transform group-hover:translate-x-1"></i>
         </div>
     </a>
-    <a href="{{ url_for('hod.department_report') }}" class="section-card p-6 card-hover flex items-start gap-4">
-        <div class="w-12 h-12 grad-sky rounded-xl flex items-center justify-center flex-shrink-0 shadow-md">
-            <i class="fa-solid fa-chart-bar text-white text-lg"></i>
+
+    <a href="{{ url_for('hod.department_report') }}" class="section-card p-8 card-hover flex flex-col items-start min-h-[220px]">
+        <div class="w-16 h-16 grad-sky rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-sky-100">
+            <i class="fa-solid fa-chart-line text-white text-2xl"></i>
         </div>
-        <div>
-            <h3 class="font-bold text-gray-900 text-sm mb-1">Department Reports</h3>
-            <p class="text-xs text-gray-500 leading-relaxed">Generate attendance reports for any class in your
-                department.</p>
-            <span class="mt-2 inline-flex items-center gap-1 text-sky-600 text-xs font-semibold">Open <i
-                    class="fa-solid fa-arrow-right text-xs"></i></span>
+        <h3 class="text-xl font-bold text-gray-900 mb-2">Reports</h3>
+        <p class="text-sm text-gray-500 leading-relaxed mb-6">Analyze attendance analytics and export department data.</p>
+        <div class="mt-auto flex items-center text-sky-600 font-black text-sm uppercase tracking-wider group">
+            View Reports <i class="fa-solid fa-arrow-right ml-2 transition-transform group-hover:translate-x-1"></i>
         </div>
     </a>
 </div>
 
 <!-- Teachers Section -->
 <div class="section-card">
-    <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 grad-primary rounded-xl flex items-center justify-center shadow">
-                <i class="fa-solid fa-chalkboard-user text-white text-base"></i>
-            </div>
-            <div>
-                <h2 class="text-base font-bold text-gray-900">Teachers</h2>
-                <p class="text-xs text-gray-500">Your department faculty</p>
-            </div>
-        </div>
-        <a href="{{ url_for('hod.add_teacher') }}"
-            class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 px-4 rounded-lg transition-all hover:-translate-y-0.5 shadow-sm">
-            <i class="fa-solid fa-plus"></i> Add Teacher
-        </a>
-    </div>
-
-    {% if pending_teachers %}
-    <div class="bg-amber-50 px-6 py-4 border-b border-amber-100 mb-4">
-        <h3 class="text-sm font-bold text-amber-800 mb-2"><i class="fa-solid fa-clock mr-1"></i> Pending Approvals</h3>
-        <ul class="space-y-2">
-            {% for pt in pending_teachers %}
-            <li
-                class="flex items-center justify-between text-sm bg-white p-3 rounded-lg shadow-sm border border-amber-100">
-                <div>
-                    <span class="font-semibold text-gray-800">{{ pt.full_name }}</span>
-                    <span class="text-gray-500 text-xs ml-2">(@{{ pt.username }})</span>
+    <div class="px-6 pt-6 pb-4 border-b border-gray-100">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 grad-primary rounded-xl flex items-center justify-center shadow">
+                    <i class="fa-solid fa-chalkboard-user text-white text-base"></i>
                 </div>
-                <form action="{{ url_for('hod.approve_teacher', teacher_id=pt.user_id) }}" method="POST" class="m-0">
-                    <button type="submit"
-                        class="text-xs bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-3 py-1 rounded font-bold transition-colors">
-                        Approve
-                    </button>
-                </form>
-            </li>
-            {% endfor %}
-        </ul>
+                <div>
+                    <h2 class="text-base font-bold text-gray-900">Faculty Management</h2>
+                    <p class="text-xs text-gray-500">Manage and oversee your department teachers</p>
+                </div>
+            </div>
+            <a href="{{ url_for('hod.add_teacher') }}"
+                class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-4 rounded-lg transition-all hover:-translate-y-0.5 shadow-sm">
+                <i class="fa-solid fa-plus"></i> Add Teacher
+            </a>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="mt-6 flex flex-wrap gap-3">
+            <div class="flex-1 min-w-[200px] relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                <input type="text" id="teacherSearch" placeholder="Search by name or email..."
+                    class="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+            </div>
+            <select id="statusFilter"
+                class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all appearance-none pr-8 relative">
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+            </select>
+            <select id="yearFilter"
+                class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all appearance-none pr-8 relative">
+                <option value="all">All Years</option>
+                <option value="FE">First Year (FE)</option>
+                <option value="SE">Second Year (SE)</option>
+                <option value="TE">Third Year (TE)</option>
+                <option value="BE">Final Year (BE)</option>
+                <option value="2023-2024">2023-2024</option>
+            </select>
+            <select id="subjectFilter"
+                class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all appearance-none pr-8 relative">
+                <option value="all">All Subjects</option>
+                {% for subj in dept_subjects %}
+                <option value="{{ subj.subject_name }}">{{ subj.subject_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
     </div>
-    {% endif %}
 
     {% if teachers %}
     <div class="overflow-x-auto">
-        <table class="data-table min-w-full">
+        <table class="data-table min-w-full" id="teacherTable">
             <thead>
                 <tr>
-                    <th class="text-left px-6 py-3 first:rounded-tl-none">Name</th>
+                    <th class="text-left px-6 py-3">Name</th>
                     <th class="text-left px-6 py-3">Email</th>
+                    <th class="text-left px-6 py-3">Assigned Subjects</th>
+                    <th class="text-left px-6 py-3">Year(s)</th>
                     <th class="text-left px-6 py-3">Status</th>
                     <th class="text-right px-6 py-3">Actions</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-50">
                 {% for teacher in teachers %}
-                <tr>
+                <tr class="teacher-row" 
+                    data-status="{{ 'active' if teacher.is_active else 'inactive' }}" 
+                    data-subjects="{{ teacher.subjects_taught if teacher.subjects_taught else '' }}"
+                    data-years="{{ teacher.years_assigned if teacher.years_assigned else '' }}">
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-3">
-                            <div
-                                class="w-9 h-9 grad-primary rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                            <div class="w-9 h-9 grad-primary rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
                                 {{ teacher.full_name[0] | upper }}
                             </div>
-                            <span class="font-semibold text-gray-900 text-sm">{{ teacher.full_name }}</span>
+                            <div>
+                                <div class="font-semibold text-gray-900 text-sm teacher-name">{{ teacher.full_name }}</div>
+                                <div class="text-[10px] text-gray-400">@{{ teacher.username }}</div>
+                            </div>
                         </div>
                     </td>
-                    <td class="px-6 py-4 text-sm text-gray-500">{{ teacher.email if teacher.email else '—' }}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500 teacher-email">{{ teacher.email if teacher.email else '—' }}</td>
+                    <td class="px-6 py-4">
+                        {% if teacher.subjects_taught %}
+                        <div class="flex flex-wrap gap-1">
+                            {% for subj in teacher.subjects_taught.split(', ') %}
+                            <span class="px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded text-[10px] font-medium">{{ subj }}</span>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <span class="text-gray-300 text-[10px]">No subjects assigned</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4">
+                        {% if teacher.years_assigned %}
+                        <div class="flex flex-wrap gap-1">
+                            {% for yr in teacher.years_assigned.split(', ') %}
+                            <span class="px-2 py-0.5 bg-amber-50 text-amber-600 border border-amber-100 rounded text-[10px] font-bold">
+                                {% if yr == 'FE' %}First Year
+                                {% elif yr == 'SE' %}Second Year
+                                {% elif yr == 'TE' %}Third Year
+                                {% elif yr == 'BE' %}Final Year
+                                {% else %}{{ yr }}{% endif %}
+                            </span>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <span class="text-gray-300 text-[10px]">None</span>
+                        {% endif %}
+                    </td>
                     <td class="px-6 py-4">
                         {% if teacher.is_active %}
-                        <span class="badge-success">Active</span>
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-700 border border-emerald-200">
+                            <i class="fa-solid fa-circle-check"></i> ACTIVE
+                        </span>
                         {% else %}
-                        <span class="badge-danger">Inactive</span>
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-rose-100 text-rose-700 border border-rose-200 animate-pulse">
+                            <i class="fa-solid fa-clock"></i> PENDING
+                        </span>
                         {% endif %}
                     </td>
                     <td class="px-6 py-4 text-right">
-                        <a href="{{ url_for('hod.edit_teacher', teacher_id=teacher.user_id) }}" class="text-indigo-500 hover:text-indigo-700 text-sm font-semibold">
-                            <i class="fa-solid fa-pen-to-square mr-1"></i>Edit
-                        </a>
+                        <div class="flex justify-end gap-2">
+                            {% if not teacher.is_active %}
+                            <form action="{{ url_for('hod.approve_teacher', teacher_id=teacher.user_id) }}" method="POST" class="m-0">
+                                <button type="submit" class="text-[10px] bg-emerald-50 text-emerald-600 hover:bg-emerald-100 px-2 py-1 rounded font-bold transition-all">
+                                    Approve
+                                </button>
+                            </form>
+                            {% endif %}
+                            <a href="{{ url_for('hod.edit_teacher', teacher_id=teacher.user_id) }}" class="text-indigo-500 hover:text-indigo-700 text-xs font-semibold">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </a>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
@@ -154,4 +230,45 @@
     </div>
     {% endif %}
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('teacherSearch');
+    const statusFilter = document.getElementById('statusFilter');
+    const subjectFilter = document.getElementById('subjectFilter');
+    const yearFilter = document.getElementById('yearFilter');
+    const rows = document.querySelectorAll('.teacher-row');
+
+    function filterTable() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const statusValue = statusFilter.value;
+        const subjectValue = subjectFilter.value;
+        const yearValue = yearFilter.value;
+
+        rows.forEach(row => {
+            const name = row.querySelector('.teacher-name').textContent.toLowerCase();
+            const email = row.querySelector('.teacher-email').textContent.toLowerCase();
+            const status = row.dataset.status;
+            const subjects = row.dataset.subjects;
+            const years = row.dataset.years;
+
+            const matchesSearch = name.includes(searchTerm) || email.includes(searchTerm);
+            const matchesStatus = statusValue === 'all' || status === statusValue;
+            const matchesSubject = subjectValue === 'all' || subjects.includes(subjectValue);
+            const matchesYear = yearValue === 'all' || years.includes(yearValue);
+
+            if (matchesSearch && matchesStatus && matchesSubject && matchesYear) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    searchInput.addEventListener('input', filterTable);
+    statusFilter.addEventListener('change', filterTable);
+    subjectFilter.addEventListener('change', filterTable);
+    yearFilter.addEventListener('change', filterTable);
+});
+</script>
 {% endblock %}

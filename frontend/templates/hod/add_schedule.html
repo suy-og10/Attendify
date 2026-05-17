@@ -1,83 +1,174 @@
 {% extends "layout.html" %}
-{% block title %}Add Schedule{% endblock %}
+{% block title %}Add Schedule — Attendify{% endblock %}
 
 {% block content %}
-<h1 class="text-3xl font-bold mb-6 text-gray-800">Add New Class Schedule</h1>
+<div class="animated-gradient rounded-2xl p-7 mb-7 relative overflow-hidden shadow-xl">
+    <div class="absolute top-0 right-0 w-56 h-56 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"></div>
+    <div class="absolute bottom-0 left-1/3 w-40 h-40 bg-purple-300/20 rounded-full blur-2xl translate-y-1/2"></div>
+    <div class="relative z-10 flex items-center gap-4">
+        <div class="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-calendar-plus text-white text-2xl"></i>
+        </div>
+        <div>
+            <h1 class="text-2xl font-black text-white">Multi-Day Schedule Setup</h1>
+            <p class="text-purple-200 text-sm mt-0.5">Configure multiple weekly slots for a subject</p>
+        </div>
+    </div>
+</div>
 
-<div class="bg-white p-8 rounded-lg shadow-md max-w-2xl mx-auto">
-     {% set form_data = form_data or {} %}
-     <form method="POST">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="mb-4">
-                <label for="subject_id" class="block text-gray-700 font-semibold mb-2">Subject:</label>
-                <select id="subject_id" name="subject_id" required
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                    <option value="">Select Subject</option>
-                    {% for subject in subjects %}
-                        <option value="{{ subject.subject_id }}" {% if form_data.get('subject_id') | int == subject.subject_id %}selected{% endif %}>
-                            {{ subject.subject_name }} ({{ subject.subject_code }})
-                        </option>
-                    {% endfor %}
-                </select>
+<div class="max-w-4xl mx-auto">
+    <form method="POST" class="space-y-8">
+        <div class="section-card p-8">
+            <div class="flex items-center gap-3 mb-8">
+                <div class="w-10 h-10 grad-primary rounded-xl flex items-center justify-center shadow">
+                    <i class="fa-solid fa-layer-group text-white"></i>
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold text-gray-900">Class Information</h2>
+                    <p class="text-xs text-gray-500">Shared details for all slots</p>
+                </div>
             </div>
-            <div class="mb-4">
-                <label for="teacher_id" class="block text-gray-700 font-semibold mb-2">Teacher:</label>
-                <select id="teacher_id" name="teacher_id" required
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                    <option value="">Select Teacher</option>
-                     {% for teacher in teachers %}
-                        <option value="{{ teacher.user_id }}" {% if form_data.get('teacher_id') | int == teacher.user_id %}selected{% endif %}>
-                            {{ teacher.full_name }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="mb-4">
-                <label for="division" class="block text-gray-700 font-semibold mb-2">Division:</label>
-                <input type="text" id="division" name="division" required value="{{ form_data.get('division', '') }}" maxlength="10"
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase" placeholder="e.g., A">
-            </div>
-             <div class="mb-4">
-                <label for="academic_year" class="block text-gray-700 font-semibold mb-2">Academic Year:</label>
-                <input type="text" id="academic_year" name="academic_year" required value="{{ form_data.get('academic_year', '') }}" maxlength="10"
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., SE or 2025-26">
-            </div>
-            <div class="mb-4">
-                <label for="day_of_week" class="block text-gray-700 font-semibold mb-2">Day of Week:</label>
-                <select id="day_of_week" name="day_of_week" required
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                    <option value="">Select Day</option>
-                    {% for i in range(days|length) %}
-                         <option value="{{ i }}" {% if form_data.get('day_of_week') == i|string %}selected{% endif %}>{{ days[i] }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-             <div class="mb-4">
-                <label for="classroom" class="block text-gray-700 font-semibold mb-2">Classroom (Optional):</label>
-                <input type="text" id="classroom" name="classroom" value="{{ form_data.get('classroom', '') }}" maxlength="50"
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., C-101">
-            </div>
-            <div class="mb-4">
-                <label for="start_time" class="block text-gray-700 font-semibold mb-2">Start Time:</label>
-                <input type="time" id="start_time" name="start_time" required value="{{ form_data.get('start_time', '') }}"
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-            </div>
-            <div class="mb-4">
-                <label for="end_time" class="block text-gray-700 font-semibold mb-2">End Time:</label>
-                <input type="time" id="end_time" name="end_time" required value="{{ form_data.get('end_time', '') }}"
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-            </div>
-        </div> {# End Grid #}
 
-        <div class="mt-6">
-            <button type="submit"
-                    class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
-                Add Schedule
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider">Subject</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-book absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <select name="subject_id" required class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium">
+                            <option value="">Select Subject</option>
+                            {% for subject in subjects %}
+                            <option value="{{ subject.subject_id }}">{{ subject.subject_name }} ({{ subject.subject_code }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider">Teacher</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-chalkboard-user absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <select name="teacher_id" required class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium">
+                            <option value="">Select Teacher</option>
+                            {% for teacher in teachers %}
+                            <option value="{{ teacher.user_id }}">{{ teacher.full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider">Division</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-users-rectangle absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" name="division" required placeholder="e.g., A" class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium uppercase">
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider">Year / Class</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-graduation-cap absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <select name="academic_year" required class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium">
+                            <option value="">Select Year</option>
+                            <option value="FE">First Year (FE)</option>
+                            <option value="SE">Second Year (SE)</option>
+                            <option value="TE">Third Year (TE)</option>
+                            <option value="BE">Final Year (BE)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="space-y-2 md:col-span-2">
+                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider">Classroom (Optional)</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-door-open absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" name="classroom" placeholder="e.g., C-101" class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-card p-8">
+            <div class="flex items-center gap-3 mb-8">
+                <div class="w-10 h-10 grad-emerald rounded-xl flex items-center justify-center shadow">
+                    <i class="fa-solid fa-clock text-white"></i>
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold text-gray-900">Weekly Time Slots</h2>
+                    <p class="text-xs text-gray-500">Enable days and specify times</p>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                {% for day in days %}
+                {% set idx = loop.index0 %}
+                <div class="flex flex-col md:flex-row items-center gap-4 p-4 rounded-2xl border border-gray-100 hover:border-indigo-100 transition-all">
+                    <div class="flex items-center gap-3 min-w-[140px]">
+                        <input type="checkbox" name="selected_days" value="{{ idx }}" id="check_{{ idx }}" class="w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" onchange="toggleDayRow(this, {{ idx }})">
+                        <label for="check_{{ idx }}" class="text-sm font-bold text-gray-700">{{ day }}</label>
+                    </div>
+
+                    <div id="times_{{ idx }}" class="flex items-center gap-4 opacity-40 pointer-events-none transition-all flex-1">
+                        <div class="flex-1">
+                            <input type="time" name="start_time_{{ idx }}" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                        <div class="flex-1">
+                            <input type="time" name="end_time_{{ idx }}" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="section-card p-8">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 grad-sky rounded-xl flex items-center justify-center shadow">
+                    <i class="fa-solid fa-bolt text-white"></i>
+                </div>
+                <div>
+                    <h2 class="text-sm font-bold text-gray-900 uppercase">Create sessions for a month / semester (Optional)</h2>
+                    <p class="text-[10px] text-gray-500">Generate class entries for the selected date range</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-2">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase">Start Date</label>
+                    <input type="date" name="deploy_start" class="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-400 text-xs">
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase">End Date</label>
+                    <input type="date" name="deploy_end" class="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-400 text-xs">
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row items-center justify-between gap-6 pt-4">
+            <a href="{{ url_for('hod.manage_schedules') }}" class="text-gray-400 hover:text-gray-600 font-bold text-sm">&larr; Back to Schedules</a>
+            <button type="submit" class="w-full md:w-auto px-12 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl transition-all">
+                CREATE SCHEDULE
             </button>
         </div>
-         <div class="mt-4 text-center">
-             <a href="{{ url_for('hod.manage_schedules') }}" class="text-gray-600 hover:underline text-sm">&larr; Cancel and return to Schedules</a>
-         </div>
     </form>
 </div>
+
+<script>
+function toggleDayRow(checkbox, index) {
+    var timesDiv = document.getElementById('times_' + index);
+    if (!timesDiv) return;
+    if (checkbox.checked) {
+        timesDiv.classList.remove('opacity-40', 'pointer-events-none');
+        var inputs = timesDiv.getElementsByTagName('input');
+        for (var i = 0; i < inputs.length; i++) { inputs[i].required = true; }
+    } else {
+        timesDiv.classList.add('opacity-40', 'pointer-events-none');
+        var inputs = timesDiv.getElementsByTagName('input');
+        for (var i = 0; i < inputs.length; i++) { 
+            inputs[i].required = false; 
+            inputs[i].value = ''; 
+        }
+    }
+}
+</script>
 {% endblock %}

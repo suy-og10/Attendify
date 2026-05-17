@@ -277,20 +277,36 @@ def select_session():
         ORDER BY cs.start_time
     """, (teacher_id, today_weekday))
 
-    sessions_data = query_db(
+    sessions_today_data = query_db(
         "SELECT schedule_id, session_id, status FROM class_sessions WHERE session_date = %s",
         (today_date_iso,)
     )
     sessions_today = {}
-    if schedules and sessions_data: 
+    if schedules and sessions_today_data: 
         schedule_ids = {s['schedule_id'] for s in schedules}
         sessions_today = {
             row['schedule_id']: {'session_id': row['session_id'], 'status': row['status']}
-            for row in sessions_data
+            for row in sessions_today_data
             if row['schedule_id'] in schedule_ids 
         }
 
-    return render_template('session_select.html', schedules=schedules, sessions_today=sessions_today, today_date=today_date_iso)
+    # Fetch ALL sessions for this teacher for historical/upcoming view
+    all_sessions = query_db("""
+        SELECT csess.session_id, csess.session_date, csess.status,
+               s.subject_name, s.subject_code, cs.division, cs.academic_year,
+               cs.start_time, cs.end_time
+        FROM class_sessions csess
+        JOIN class_schedules cs ON csess.schedule_id = cs.schedule_id
+        JOIN subjects s ON cs.subject_id = s.subject_id
+        WHERE cs.teacher_id = %s
+        ORDER BY csess.session_date DESC, cs.start_time DESC
+    """, (teacher_id,))
+
+    return render_template('session_select.html', 
+                           schedules=schedules, 
+                           sessions_today=sessions_today, 
+                           today_date=today_date_iso,
+                           all_sessions=all_sessions)
 
 
 @teacher_bp.route('/attendance/start_session', methods=['POST'])

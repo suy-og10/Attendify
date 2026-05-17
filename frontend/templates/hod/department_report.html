@@ -1,79 +1,129 @@
 {% extends "layout.html" %}
-{% block title %}Department Attendance Report{% endblock %}
+{% block title %}Attendance Report — Attendify{% endblock %}
 
 {% block content %}
-<h1 class="text-3xl font-bold mb-6 text-gray-800">Department Attendance Reports</h1>
+<div class="flex items-center justify-between mb-8 px-2">
+    <div class="flex items-center gap-4">
+        <div class="w-10 h-10 grad-indigo rounded-lg flex items-center justify-center shadow-sm">
+            <i class="fa-solid fa-chart-simple text-white text-lg"></i>
+        </div>
+        <div>
+            <h1 class="text-2xl font-black text-gray-900 leading-tight">Attendance Report</h1>
+            <p class="text-gray-500 text-sm font-medium">Generate an Excel report for your subjects</p>
+        </div>
+    </div>
+    <a href="{{ url_for('hod.dashboard') }}" class="flex items-center gap-2 text-gray-500 hover:text-indigo-600 font-bold text-sm transition-colors bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-100">
+        <i class="fa-solid fa-arrow-left text-xs"></i>
+        Dashboard
+    </a>
+</div>
 
-<div class="bg-white p-8 rounded-lg shadow-md max-w-4xl mx-auto">
-    <form method="POST">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-            <div>
-                <label for="start_date" class="block text-gray-700 font-semibold mb-2">Start Date:</label>
-                <input type="date" id="start_date" name="start_date" required
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+<div class="max-w-4xl mx-auto">
+    <div class="section-card p-8">
+        <div class="flex items-center gap-4 mb-10">
+            <div class="w-12 h-12 bg-sky-500 rounded-2xl flex items-center justify-center shadow-lg shadow-sky-100">
+                <i class="fa-solid fa-file-excel text-white text-xl"></i>
             </div>
-
             <div>
-                <label for="end_date" class="block text-gray-700 font-semibold mb-2">End Date:</label>
-                <input type="date" id="end_date" name="end_date" required
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <h2 class="text-xl font-bold text-gray-900">Configure Report</h2>
+                <p class="text-sm text-gray-500">Select subject, division, and date range to export</p>
             </div>
-
-            <div>
-                <label for="subject_id" class="block text-gray-700 font-semibold mb-2">Subject (Optional):</label>
-                <select id="subject_id" name="subject_id"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="all">All Subjects</option>
-                    {% for subject in subjects %}
-                    <option value="{{ subject.subject_id }}">{{ subject.subject_name }} ({{ subject.subject_code }})
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div>
-                <label for="division" class="block text-gray-700 font-semibold mb-2">Division (Optional):</label>
-                <select id="division" name="division"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="all">All Divisions</option>
-                    {% for div in divisions %}
-                    <option value="{{ div.division }}">{{ div.division }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div>
-                <label for="academic_year" class="block text-gray-700 font-semibold mb-2">Academic Year
-                    (Optional):</label>
-                <select id="academic_year" name="academic_year"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="all">All Years</option>
-                    {% for year in academic_years %}
-                    <option value="{{ year.academic_year }}">{{ year.academic_year }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div>
-                <label for="teacher_id" class="block text-gray-700 font-semibold mb-2">Teacher (Optional):</label>
-                <select id="teacher_id" name="teacher_id"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="all">All Teachers</option>
-                    {% for teacher in teachers %}
-                    <option value="{{ teacher.user_id }}">{{ teacher.full_name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
         </div>
 
-        <div class="mt-8 text-center">
-            <button type="submit"
-                class="w-full md:w-auto bg-blue-600 text-white font-bold py-3 px-8 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
-                Generate Excel Report
-            </button>
-        </div>
-    </form>
+        <form method="POST" class="space-y-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                <!-- Subject Filter -->
+                <div class="space-y-2">
+                    <label for="subject_id" class="block text-sm font-bold text-gray-600">Subject</label>
+                    <div class="relative group">
+                        <i class="fa-solid fa-book absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400"></i>
+                        <select id="subject_id" name="subject_id"
+                            class="w-full pl-12 pr-10 py-3.5 bg-indigo-50/30 border border-indigo-100/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-sm font-semibold appearance-none text-gray-700">
+                            <option value="all">Select Subject</option>
+                            {% for subject in subjects %}
+                            <option value="{{ subject.subject_id }}">{{ subject.subject_name }} ({{ subject.subject_code }})</option>
+                            {% endfor %}
+                        </select>
+                        <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-[10px]"></i>
+                    </div>
+                </div>
+
+                <!-- Division Filter -->
+                <div class="space-y-2">
+                    <label for="division" class="block text-sm font-bold text-gray-600">Division <span class="text-gray-400 font-medium">(Optional)</span></label>
+                    <div class="relative group">
+                        <i class="fa-solid fa-users-rectangle absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400"></i>
+                        <select id="division" name="division"
+                            class="w-full pl-12 pr-10 py-3.5 bg-indigo-50/30 border border-indigo-100/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-sm font-semibold appearance-none text-gray-700">
+                            <option value="all">e.g., A</option>
+                            {% for div in divisions %}
+                            <option value="{{ div.division }}">Division {{ div.division }}</option>
+                            {% endfor %}
+                        </select>
+                        <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-[10px]"></i>
+                    </div>
+                </div>
+
+                <!-- Date Range -->
+                <div class="space-y-2">
+                    <label for="start_date" class="block text-sm font-bold text-gray-600">Start Date</label>
+                    <div class="relative group">
+                        <i class="fa-solid fa-calendar-alt absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400"></i>
+                        <input type="date" id="start_date" name="start_date" required
+                            class="w-full pl-12 pr-4 py-3.5 bg-indigo-50/30 border border-indigo-100/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-sm font-semibold text-gray-700">
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label for="end_date" class="block text-sm font-bold text-gray-600">End Date</label>
+                    <div class="relative group">
+                        <i class="fa-solid fa-calendar-check absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400"></i>
+                        <input type="date" id="end_date" name="end_date" required
+                            class="w-full pl-12 pr-4 py-3.5 bg-indigo-50/30 border border-indigo-100/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-sm font-semibold text-gray-700">
+                    </div>
+                </div>
+
+                <!-- Academic Year Filter -->
+                <div class="space-y-2">
+                    <label for="academic_year" class="block text-sm font-bold text-gray-600">Academic Year <span class="text-gray-400 font-medium">(Optional)</span></label>
+                    <div class="relative group">
+                        <i class="fa-solid fa-graduation-cap absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400"></i>
+                        <select id="academic_year" name="academic_year"
+                            class="w-full pl-12 pr-10 py-3.5 bg-indigo-50/30 border border-indigo-100/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-sm font-semibold appearance-none text-gray-700">
+                            <option value="all">All Years</option>
+                            {% for year in academic_years %}
+                            <option value="{{ year.academic_year }}">{{ year.academic_year }}</option>
+                            {% endfor %}
+                        </select>
+                        <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-[10px]"></i>
+                    </div>
+                </div>
+
+                <!-- Teacher Filter -->
+                <div class="space-y-2">
+                    <label for="teacher_id" class="block text-sm font-bold text-gray-600">Teacher <span class="text-gray-400 font-medium">(Optional)</span></label>
+                    <div class="relative group">
+                        <i class="fa-solid fa-chalkboard-user absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400"></i>
+                        <select id="teacher_id" name="teacher_id"
+                            class="w-full pl-12 pr-10 py-3.5 bg-indigo-50/30 border border-indigo-100/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-sm font-semibold appearance-none text-gray-700">
+                            <option value="all">All Teachers</option>
+                            {% for teacher in teachers %}
+                            <option value="{{ teacher.user_id }}">{{ teacher.full_name }}</option>
+                            {% endfor %}
+                        </select>
+                        <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-[10px]"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-center pt-8">
+                <button type="submit"
+                    class="w-full py-4.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-100 hover:shadow-indigo-200 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 text-lg">
+                    <i class="fa-solid fa-file-arrow-down text-xl"></i>
+                    Generate Excel Report
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 {% endblock %}
