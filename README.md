@@ -56,7 +56,7 @@ Attendify is an AI-powered face recognition attendance management system built f
 5. **Run the Web Application:**
    ```bash
    # From the project root
-   python backend/app.py
+   python -m backend.app
    ```
    Access the system at `http://127.0.0.1:5000/`.
 
