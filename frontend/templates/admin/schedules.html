@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+{% block title %}Schedules - Attendify{% endblock %}
+
+{% block content %}
+<div class="animated-gradient rounded-2xl p-7 mb-7 shadow-xl">
+    <h1 class="text-2xl font-black text-white">Institute Timetable</h1>
+    <p class="text-purple-200 text-sm mt-0.5">Read-only global view of active and inactive class schedules</p>
+</div>
+
+<div class="section-card p-6">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="border-b border-gray-100 text-gray-500 text-sm">
+                    <th class="py-3 px-4 font-semibold">Department</th>
+                    <th class="py-3 px-4 font-semibold">Subject</th>
+                    <th class="py-3 px-4 font-semibold">Teacher</th>
+                    <th class="py-3 px-4 font-semibold">Division</th>
+                    <th class="py-3 px-4 font-semibold">Day</th>
+                    <th class="py-3 px-4 font-semibold">Time</th>
+                    <th class="py-3 px-4 font-semibold">Status</th>
+                </tr>
+            </thead>
+            <tbody class="text-sm">
+                {% for schedule in schedules %}
+                <tr class="border-b border-gray-50">
+                    <td class="py-3 px-4 text-gray-700">{{ schedule.dept_name }}</td>
+                    <td class="py-3 px-4 font-semibold text-gray-900">{{ schedule.subject_code }} - {{ schedule.subject_name }}</td>
+                    <td class="py-3 px-4 text-gray-600">{{ schedule.teacher_name }}</td>
+                    <td class="py-3 px-4 text-gray-600">{{ schedule.division }} / {{ schedule.academic_year }}</td>
+                    <td class="py-3 px-4 text-gray-600">{{ schedule.day_name }}</td>
+                    <td class="py-3 px-4 text-gray-600">{{ schedule.start_time }} - {{ schedule.end_time }}</td>
+                    <td class="py-3 px-4">{% if schedule.is_active %}<span class="badge-success">Active</span>{% else %}<span class="badge-danger">Inactive</span>{% endif %}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7" class="py-8 text-center text-gray-500">No schedules found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "layout.html" %}
+{% block title %}Sessions - Attendify{% endblock %}
+
+{% block content %}
+<div class="animated-gradient rounded-2xl p-7 mb-7 shadow-xl">
+    <h1 class="text-2xl font-black text-white">Session Oversight</h1>
+    <p class="text-purple-200 text-sm mt-0.5">Monitor classes and override session status when required</p>
+</div>
+
+<div class="section-card p-6 mb-6">
+    <form method="GET" class="flex flex-wrap gap-3 items-end">
+        <div>
+            <label class="block text-xs font-bold text-gray-500 mb-1">Status</label>
+            <select name="status" class="input-field !pl-3">
+                {% for status in ['all', 'SCHEDULED', 'ONGOING', 'COMPLETED', 'CANCELLED'] %}
+                <option value="{{ status }}" {% if selected_status == status %}selected{% endif %}>{{ status }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button class="btn-primary">Filter</button>
+    </form>
+</div>
+
+<div class="section-card p-6">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="border-b border-gray-100 text-gray-500 text-sm">
+                    <th class="py-3 px-4 font-semibold">Date</th>
+                    <th class="py-3 px-4 font-semibold">Class</th>
+                    <th class="py-3 px-4 font-semibold">Teacher</th>
+                    <th class="py-3 px-4 font-semibold">Status</th>
+                    <th class="py-3 px-4 font-semibold">Override</th>
+                </tr>
+            </thead>
+            <tbody class="text-sm">
+                {% for session in sessions %}
+                <tr class="border-b border-gray-50">
+                    <td class="py-3 px-4 text-gray-600">{{ session.session_date }}</td>
+                    <td class="py-3 px-4">
+                        <p class="font-semibold text-gray-900">{{ session.subject_code }} - {{ session.subject_name }}</p>
+                        <p class="text-xs text-gray-500">{{ session.dept_name }} / {{ session.division }} / {{ session.academic_year }}</p>
+                    </td>
+                    <td class="py-3 px-4 text-gray-600">{{ session.teacher_name }}</td>
+                    <td class="py-3 px-4"><span class="badge-info">{{ session.status }}</span></td>
+                    <td class="py-3 px-4">
+                        <form method="POST" action="{{ url_for('admin.update_session_status', session_id=session.session_id) }}" class="flex gap-2">
+                            <select name="status" class="border rounded px-2 py-1 text-xs">
+                                {% for status in ['SCHEDULED', 'ONGOING', 'COMPLETED', 'CANCELLED'] %}
+                                <option value="{{ status }}" {% if session.status == status %}selected{% endif %}>{{ status }}</option>
+                                {% endfor %}
+                            </select>
+                            <button class="text-indigo-600 font-semibold text-xs">Save</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="py-8 text-center text-gray-500">No sessions found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

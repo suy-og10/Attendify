@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash TEXT NOT NULL, -- Store hashed passwords!
     full_name TEXT NOT NULL,
     email TEXT UNIQUE,
-    role TEXT NOT NULL CHECK(role IN ('Admin', 'HOD', 'Teacher')),
+    role TEXT NOT NULL CHECK(role IN ('Admin', 'HOD', 'Teacher', 'Student')),
     dept_id INTEGER, -- HODs/Teachers belong to a department
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -35,10 +35,12 @@ CREATE TABLE IF NOT EXISTS students (
     academic_year TEXT NOT NULL,
     email TEXT UNIQUE,
     phone TEXT,
+    user_id INTEGER UNIQUE,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (dept_id) REFERENCES departments(dept_id)
+    FOREIGN KEY (dept_id) REFERENCES departments(dept_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 CREATE INDEX IF NOT EXISTS idx_student_prn ON students(prn);
 CREATE INDEX IF NOT EXISTS idx_student_roll_division ON students(roll_no, division);
@@ -122,6 +124,31 @@ CREATE TABLE IF NOT EXISTS attendance_records (
 );
 CREATE INDEX IF NOT EXISTS idx_attendance_session_status ON attendance_records(session_id, status);
 CREATE INDEX IF NOT EXISTS idx_attendance_student_time ON attendance_records(student_id, marked_time);
+
+-- 9. System Settings Table
+CREATE TABLE IF NOT EXISTS system_settings (
+    setting_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    setting_key TEXT NOT NULL UNIQUE,
+    setting_value TEXT NOT NULL,
+    updated_by INTEGER,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (updated_by) REFERENCES users(user_id)
+);
+
+-- 10. Audit Logs Table
+CREATE TABLE IF NOT EXISTS audit_logs (
+    audit_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    actor_user_id INTEGER,
+    action TEXT NOT NULL,
+    entity_type TEXT,
+    entity_id TEXT,
+    details TEXT,
+    ip_address TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (actor_user_id) REFERENCES users(user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_audit_actor_time ON audit_logs(actor_user_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_logs(entity_type, entity_id);
 
 -- Add triggers for updated_at if needed in SQLite
 CREATE TRIGGER IF NOT EXISTS update_student_timestamp AFTER UPDATE ON students FOR EACH ROW BEGIN

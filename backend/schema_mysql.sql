@@ -134,4 +134,31 @@ CREATE TABLE attendance_records (
     INDEX idx_attendance_student_time (student_id, marked_time)
 ) ENGINE=InnoDB;
 
+-- 9. System Settings Table
+DROP TABLE IF EXISTS system_settings;
+CREATE TABLE system_settings (
+    setting_id INT AUTO_INCREMENT PRIMARY KEY,
+    setting_key VARCHAR(80) NOT NULL UNIQUE,
+    setting_value TEXT NOT NULL,
+    updated_by INT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (updated_by) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+-- 10. Audit Logs Table
+DROP TABLE IF EXISTS audit_logs;
+CREATE TABLE audit_logs (
+    audit_id INT AUTO_INCREMENT PRIMARY KEY,
+    actor_user_id INT NULL,
+    action VARCHAR(80) NOT NULL,
+    entity_type VARCHAR(80) NULL,
+    entity_id VARCHAR(80) NULL,
+    details TEXT NULL,
+    ip_address VARCHAR(45) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (actor_user_id) REFERENCES users(user_id) ON DELETE SET NULL,
+    INDEX idx_audit_actor_time (actor_user_id, created_at),
+    INDEX idx_audit_entity (entity_type, entity_id)
+) ENGINE=InnoDB;
+
 SET FOREIGN_KEY_CHECKS=1; -- Re-enable FK checks

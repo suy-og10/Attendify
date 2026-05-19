@@ -1,0 +1,44 @@
+{% extends "layout.html" %}
+{% block title %}Subjects - Attendify{% endblock %}
+
+{% block content %}
+<div class="animated-gradient rounded-2xl p-7 mb-7 shadow-xl">
+    <h1 class="text-2xl font-black text-white">Global Subject Control</h1>
+    <p class="text-purple-200 text-sm mt-0.5">View and activate/deactivate subjects across departments</p>
+</div>
+
+<div class="section-card p-6">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="border-b border-gray-100 text-gray-500 text-sm">
+                    <th class="py-3 px-4 font-semibold">Code</th>
+                    <th class="py-3 px-4 font-semibold">Subject</th>
+                    <th class="py-3 px-4 font-semibold">Department</th>
+                    <th class="py-3 px-4 font-semibold">Semester</th>
+                    <th class="py-3 px-4 font-semibold">Status</th>
+                    <th class="py-3 px-4 font-semibold">Action</th>
+                </tr>
+            </thead>
+            <tbody class="text-sm">
+                {% for subject in subjects %}
+                <tr class="border-b border-gray-50">
+                    <td class="py-3 px-4 font-bold text-gray-900">{{ subject.subject_code }}</td>
+                    <td class="py-3 px-4 text-gray-700">{{ subject.subject_name }}</td>
+                    <td class="py-3 px-4 text-gray-600">{{ subject.dept_name }}</td>
+                    <td class="py-3 px-4 text-gray-600">{{ subject.semester }}</td>
+                    <td class="py-3 px-4">{% if subject.is_active %}<span class="badge-success">Active</span>{% else %}<span class="badge-danger">Inactive</span>{% endif %}</td>
+                    <td class="py-3 px-4">
+                        <form method="POST" action="{{ url_for('admin.toggle_subject', subject_id=subject.subject_id) }}">
+                            <button class="text-indigo-600 font-semibold text-xs">{{ 'Deactivate' if subject.is_active else 'Activate' }}</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="py-8 text-center text-gray-500">No subjects found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
