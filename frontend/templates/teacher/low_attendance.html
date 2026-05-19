@@ -1,0 +1,128 @@
+{% extends "layout.html" %}
+{% block title %}Low Attendance Report — Attendify{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+    <div>
+        <h1 class="text-2xl font-black text-gray-900 flex items-center gap-2">
+            <i class="fa-solid fa-triangle-exclamation text-amber-500"></i> Low Attendance Report
+        </h1>
+        <p class="text-sm text-gray-500 mt-0.5">Students below <span class="font-bold text-rose-600">{{ threshold }}%</span> attendance in your classes</p>
+    </div>
+    <a href="{{ url_for('teacher.dashboard') }}"
+        class="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold py-2 px-4 rounded-xl transition-all self-start">
+        <i class="fa-solid fa-arrow-left"></i> Dashboard
+    </a>
+</div>
+
+<!-- Filters -->
+<div class="section-card p-5 mb-6">
+    <form method="GET" class="flex flex-wrap items-end gap-4">
+        <div>
+            <label class="text-xs font-bold text-gray-600 uppercase tracking-wider block mb-1.5">Subject</label>
+            <select name="subject_id" class="bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none min-w-[180px]">
+                <option value="">All Subjects</option>
+                {% for s in subjects %}
+                <option value="{{ s.subject_id }}" {{ 'selected' if subject_filter == s.subject_id }}>{{ s.subject_code }} — {{ s.subject_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="text-xs font-bold text-gray-600 uppercase tracking-wider block mb-1.5">Division</label>
+            <select name="division" class="bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none min-w-[120px]">
+                <option value="">All</option>
+                {% for d in divisions %}
+                <option value="{{ d.division }}" {{ 'selected' if division_filter == d.division }}>Div {{ d.division }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="text-xs font-bold text-gray-600 uppercase tracking-wider block mb-1.5">Threshold (%)</label>
+            <input type="number" name="threshold" value="{{ threshold }}" min="1" max="100"
+                class="bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg px-3 py-2 w-20 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+        </div>
+        <button type="submit"
+            class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-4 rounded-lg transition-all hover:-translate-y-0.5 shadow-sm">
+            <i class="fa-solid fa-filter"></i> Apply
+        </button>
+    </form>
+</div>
+
+<!-- Results -->
+<div class="section-card overflow-hidden">
+    <div class="flex items-center justify-between px-6 pt-5 pb-3 border-b border-gray-100">
+        <p class="text-sm font-bold text-gray-700">
+            <span class="text-lg font-black text-rose-600">{{ students | length }}</span>
+            <span class="text-gray-400 font-medium">student{{ 's' if students | length != 1 }} below threshold</span>
+        </p>
+    </div>
+
+    {% if students %}
+    <div class="overflow-x-auto">
+        <table class="data-table min-w-full">
+            <thead>
+                <tr>
+                    <th class="text-left px-5 py-3">Student</th>
+                    <th class="text-left px-5 py-3">Division</th>
+                    <th class="text-left px-5 py-3">Subject</th>
+                    <th class="text-left px-5 py-3">Sessions</th>
+                    <th class="text-left px-5 py-3">Attendance</th>
+                    <th class="text-left px-5 py-3">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in students %}
+                <tr>
+                    <td class="px-5 py-4">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-full grad-rose flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                                {{ s.student_name[0] | upper }}
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-900 text-sm">{{ s.student_name }}</p>
+                                <p class="text-xs text-gray-400 font-mono">{{ s.prn }}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-5 py-4"><span class="badge-info">{{ s.division }}</span></td>
+                    <td class="px-5 py-4">
+                        <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">{{ s.subject_code }}</span>
+                        <p class="text-xs text-gray-500 mt-0.5">{{ s.subject_name }}</p>
+                    </td>
+                    <td class="px-5 py-4">
+                        <p class="text-sm font-semibold text-gray-700">{{ s.present_count or 0 }} / {{ s.total_sessions }}</p>
+                    </td>
+                    <td class="px-5 py-4">
+                        <div class="flex items-center gap-2">
+                            <div class="w-24 bg-gray-100 rounded-full h-2 overflow-hidden">
+                                <div class="h-full rounded-full transition-all
+                                    {% if s.percentage >= 50 %}bg-gradient-to-r from-amber-400 to-amber-500
+                                    {% else %}bg-gradient-to-r from-rose-400 to-rose-500{% endif %}"
+                                    style="width: {{ s.percentage }}%"></div>
+                            </div>
+                            <span class="text-sm font-black {% if s.percentage >= 50 %}text-amber-600{% else %}text-rose-600{% endif %}">{{ s.percentage }}%</span>
+                        </div>
+                    </td>
+                    <td class="px-5 py-4">
+                        <a href="{{ url_for('teacher.student_profile', student_id=s.student_id) }}"
+                            class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-xs font-bold transition-colors">
+                            <i class="fa-solid fa-eye"></i> Profile
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="flex flex-col items-center text-center py-16">
+        <div class="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mb-4">
+            <i class="fa-solid fa-face-smile text-emerald-400 text-3xl"></i>
+        </div>
+        <h3 class="text-gray-700 font-semibold mb-1">All students above threshold!</h3>
+        <p class="text-gray-400 text-sm">No students are below {{ threshold }}% attendance in your classes.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

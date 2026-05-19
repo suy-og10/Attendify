@@ -1,0 +1,100 @@
+{% extends "layout.html" %}
+{% block title %}Study Materials — Attendify{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+    <div>
+        <h1 class="text-2xl font-black text-gray-900 flex items-center gap-2">
+            <i class="fa-solid fa-cloud-arrow-down text-indigo-500"></i> Study Materials
+        </h1>
+        <p class="text-sm text-gray-500 mt-0.5">Download resources published by your teachers</p>
+    </div>
+    <a href="{{ url_for('student.dashboard') }}"
+        class="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold py-2 px-4 rounded-xl transition-all">
+        <i class="fa-solid fa-arrow-left"></i> Dashboard
+    </a>
+</div>
+
+<!-- Subject Filter -->
+<div class="section-card p-5 mb-6">
+    <form method="GET" class="flex flex-wrap items-center gap-3">
+        <label class="text-xs font-bold text-gray-600 uppercase tracking-wider">Filter:</label>
+        <a href="{{ url_for('student.course_materials') }}"
+            class="text-xs font-bold px-3 py-1.5 rounded-lg transition-all {{ 'bg-indigo-600 text-white shadow-sm' if not subject_filter else 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
+            All Subjects
+        </a>
+        {% for s in subjects %}
+        <a href="{{ url_for('student.course_materials', subject_id=s.subject_id) }}"
+            class="text-xs font-bold px-3 py-1.5 rounded-lg transition-all {{ 'bg-indigo-600 text-white shadow-sm' if subject_filter == s.subject_id else 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
+            {{ s.subject_code }}
+        </a>
+        {% endfor %}
+    </form>
+</div>
+
+<!-- Materials Grid -->
+{% if materials %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    {% for mat in materials %}
+    {% set ext = mat.file_name.rsplit('.', 1)[1].lower() if '.' in mat.file_name else '' %}
+    {% set icon_class = 'fa-file-pdf text-rose-500' if ext == 'pdf'
+                   else 'fa-file-word text-blue-500' if ext in ('doc', 'docx')
+                   else 'fa-file-powerpoint text-orange-500' if ext in ('ppt', 'pptx')
+                   else 'fa-file-excel text-emerald-500' if ext in ('xls', 'xlsx')
+                   else 'fa-file-image text-purple-500' if ext in ('png', 'jpg', 'jpeg')
+                   else 'fa-file-lines text-gray-500' %}
+    <div class="section-card p-5 card-hover group flex flex-col h-full">
+        <div class="flex items-start gap-4 mb-4">
+            <!-- File icon -->
+            <div class="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center flex-shrink-0 border border-gray-100 shadow-sm">
+                <i class="fa-solid {{ icon_class }} text-xl"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="font-bold text-gray-900 text-sm line-clamp-2" title="{{ mat.title }}">{{ mat.title }}</p>
+                <div class="flex items-center gap-2 mt-1.5">
+                    <span class="text-[10px] font-bold text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">{{ mat.subject_code }}</span>
+                </div>
+            </div>
+        </div>
+        
+        {% if mat.description %}
+        <p class="text-xs text-gray-500 mb-4 line-clamp-3 flex-grow">{{ mat.description }}</p>
+        {% else %}
+        <div class="flex-grow"></div>
+        {% endif %}
+        
+        <div class="border-t border-gray-50 pt-3 mt-auto">
+            <div class="flex items-center justify-between">
+                <div class="flex flex-col gap-0.5">
+                    <span class="text-[10px] text-gray-400 font-medium"><i class="fa-solid fa-user-tie mr-1"></i>{{ mat.teacher_name }}</span>
+                    <div class="flex items-center gap-2 text-[10px] text-gray-400">
+                        <span>{{ mat.created_at.strftime('%d %b %Y') if mat.created_at.strftime else mat.created_at }}</span>
+                        {% if mat.file_size %}
+                        <span>•</span>
+                        <span>{{ '%.1f' | format(mat.file_size / 1024) }} KB</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <a href="{{ url_for('student.download_material', material_id=mat.material_id) }}"
+                    class="w-8 h-8 rounded-lg bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white flex items-center justify-center transition-all flex-shrink-0"
+                    title="Download File">
+                    <i class="fa-solid fa-download text-xs"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="section-card">
+    <div class="flex flex-col items-center text-center py-16">
+        <div class="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mb-4">
+            <i class="fa-solid fa-folder-open text-indigo-300 text-3xl"></i>
+        </div>
+        <h3 class="text-gray-700 font-semibold mb-1">No materials found</h3>
+        <p class="text-gray-400 text-sm">Teachers have not published any study materials for this subject yet.</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

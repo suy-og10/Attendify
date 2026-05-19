@@ -1,0 +1,113 @@
+{% extends "layout.html" %}
+{% block title %}Correction Requests — Attendify{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+    <div>
+        <h1 class="text-2xl font-black text-gray-900 flex items-center gap-2">
+            <i class="fa-solid fa-pen-to-square text-indigo-500"></i> Correction Requests
+        </h1>
+        <p class="text-sm text-gray-500 mt-0.5">Track your submitted attendance correction requests</p>
+    </div>
+    <a href="{{ url_for('teacher.dashboard') }}"
+        class="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold py-2 px-4 rounded-xl transition-all self-start">
+        <i class="fa-solid fa-arrow-left"></i> Dashboard
+    </a>
+</div>
+
+<!-- Filters -->
+<div class="section-card p-5 mb-6">
+    <form method="GET" class="flex flex-wrap items-center gap-3">
+        <label class="text-xs font-bold text-gray-600 uppercase tracking-wider">Filter by Status:</label>
+        <a href="{{ url_for('teacher.correction_requests') }}"
+            class="text-xs font-bold px-3 py-1.5 rounded-lg transition-all {{ 'bg-indigo-600 text-white' if not status_filter else 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
+            All
+        </a>
+        <a href="{{ url_for('teacher.correction_requests', status='PENDING') }}"
+            class="text-xs font-bold px-3 py-1.5 rounded-lg transition-all {{ 'bg-amber-500 text-white' if status_filter == 'PENDING' else 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
+            <i class="fa-solid fa-clock mr-1"></i>Pending
+        </a>
+        <a href="{{ url_for('teacher.correction_requests', status='APPROVED') }}"
+            class="text-xs font-bold px-3 py-1.5 rounded-lg transition-all {{ 'bg-emerald-500 text-white' if status_filter == 'APPROVED' else 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
+            <i class="fa-solid fa-circle-check mr-1"></i>Approved
+        </a>
+        <a href="{{ url_for('teacher.correction_requests', status='REJECTED') }}"
+            class="text-xs font-bold px-3 py-1.5 rounded-lg transition-all {{ 'bg-rose-500 text-white' if status_filter == 'REJECTED' else 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
+            <i class="fa-solid fa-circle-xmark mr-1"></i>Rejected
+        </a>
+    </form>
+</div>
+
+<!-- Requests Table -->
+<div class="section-card overflow-hidden">
+    {% if corrections %}
+    <div class="overflow-x-auto">
+        <table class="data-table min-w-full">
+            <thead>
+                <tr>
+                    <th class="text-left px-5 py-3">Student</th>
+                    <th class="text-left px-5 py-3">Subject</th>
+                    <th class="text-left px-5 py-3">Session Date</th>
+                    <th class="text-left px-5 py-3">Current → Requested</th>
+                    <th class="text-left px-5 py-3">Reason</th>
+                    <th class="text-left px-5 py-3">Status</th>
+                    <th class="text-left px-5 py-3">Submitted</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in corrections %}
+                <tr>
+                    <td class="px-5 py-4">
+                        <p class="font-semibold text-gray-900 text-sm">{{ req.student_name }}</p>
+                        <p class="text-xs text-gray-400 font-mono">{{ req.prn }}</p>
+                    </td>
+                    <td class="px-5 py-4">
+                        <span class="badge-info">{{ req.subject_code }}</span>
+                        <p class="text-xs text-gray-500 mt-0.5">{{ req.subject_name }}</p>
+                    </td>
+                    <td class="px-5 py-4 text-sm text-gray-600">{{ req.session_date }}</td>
+                    <td class="px-5 py-4">
+                        <div class="flex items-center gap-1.5 text-xs">
+                            <span class="{% if req.current_status == 'Present' %}badge-success{% elif req.current_status == 'Absent' %}badge-danger{% else %}badge-warning{% endif %}">{{ req.current_status }}</span>
+                            <i class="fa-solid fa-arrow-right text-gray-300"></i>
+                            <span class="{% if req.requested_status == 'Present' %}badge-success{% elif req.requested_status == 'Absent' %}badge-danger{% else %}badge-warning{% endif %}">{{ req.requested_status }}</span>
+                        </div>
+                    </td>
+                    <td class="px-5 py-4">
+                        <p class="text-xs text-gray-600 max-w-[200px] truncate" title="{{ req.reason }}">{{ req.reason }}</p>
+                    </td>
+                    <td class="px-5 py-4">
+                        {% if req.status == 'PENDING' %}
+                        <span class="inline-flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-400 pulse-dot"></span>Pending
+                        </span>
+                        {% elif req.status == 'APPROVED' %}
+                        <span class="badge-success"><i class="fa-solid fa-check mr-1"></i>Approved</span>
+                        {% if req.reviewed_by_name %}
+                        <p class="text-[10px] text-gray-400 mt-0.5">by {{ req.reviewed_by_name }}</p>
+                        {% endif %}
+                        {% else %}
+                        <span class="badge-danger"><i class="fa-solid fa-xmark mr-1"></i>Rejected</span>
+                        {% if req.reviewed_by_name %}
+                        <p class="text-[10px] text-gray-400 mt-0.5">by {{ req.reviewed_by_name }}</p>
+                        {% endif %}
+                        {% endif %}
+                    </td>
+                    <td class="px-5 py-4 text-xs text-gray-400">{{ req.created_at }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="flex flex-col items-center text-center py-16">
+        <div class="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mb-4">
+            <i class="fa-solid fa-inbox text-indigo-300 text-3xl"></i>
+        </div>
+        <h3 class="text-gray-700 font-semibold mb-1">No correction requests</h3>
+        <p class="text-gray-400 text-sm">You can submit correction requests from the attendance view of any completed session.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

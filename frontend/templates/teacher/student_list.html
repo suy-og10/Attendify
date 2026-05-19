@@ -157,6 +157,11 @@
                     </td>
                     <td class="px-5 py-4 text-right">
                         <div class="flex items-center justify-end gap-2">
+                            <a href="{{ url_for('teacher.student_profile', student_id=student.student_id) }}"
+                                title="View Profile"
+                                class="w-8 h-8 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-600 flex items-center justify-center transition-colors">
+                                <i class="fa-solid fa-eye text-xs"></i>
+                            </a>
                             <a href="{{ url_for('teacher.edit_student', student_id=student.student_id) }}"
                                 title="Edit Student"
                                 class="w-8 h-8 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-600 flex items-center justify-center transition-colors">

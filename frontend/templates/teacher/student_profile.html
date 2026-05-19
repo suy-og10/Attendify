@@ -1,0 +1,175 @@
+{% extends "layout.html" %}
+{% block title %}{{ student.student_name }} — Student Profile — Attendify{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+    <div>
+        <h1 class="text-2xl font-black text-gray-900 flex items-center gap-2">
+            <i class="fa-solid fa-user-graduate text-indigo-500"></i> Student Profile
+        </h1>
+    </div>
+    <a href="{{ url_for('teacher.list_students') }}"
+        class="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold py-2 px-4 rounded-xl transition-all self-start">
+        <i class="fa-solid fa-arrow-left"></i> Back to Students
+    </a>
+</div>
+
+<!-- Student Info Card -->
+<div class="section-card p-6 mb-6">
+    <div class="flex flex-col sm:flex-row gap-6">
+        <!-- Avatar -->
+        <div class="flex-shrink-0">
+            <div class="w-20 h-20 rounded-2xl grad-primary flex items-center justify-center text-white text-3xl font-black shadow-lg">
+                {{ student.student_name[0] | upper }}
+            </div>
+        </div>
+        <!-- Details -->
+        <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <div>
+                <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-0.5">Full Name</p>
+                <p class="text-sm font-bold text-gray-900">{{ student.student_name }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-0.5">PRN</p>
+                <p class="text-sm font-mono font-semibold text-gray-700 bg-gray-100 inline-block px-2 py-0.5 rounded">{{ student.prn }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-0.5">Roll No</p>
+                <p class="text-sm font-semibold text-gray-700">{{ student.roll_no or '—' }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-0.5">Division</p>
+                <span class="badge-info">{{ student.division }}</span>
+            </div>
+            <div>
+                <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-0.5">Department</p>
+                <p class="text-sm font-semibold text-gray-700">{{ student.dept_name }} ({{ student.dept_code }})</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-0.5">Academic Year</p>
+                <p class="text-sm font-semibold text-gray-700">{{ student.academic_year }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-0.5">Email</p>
+                <p class="text-sm text-gray-600">{{ student.email or '—' }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-0.5">Phone</p>
+                <p class="text-sm text-gray-600">{{ student.phone or '—' }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-0.5">Face Embeddings</p>
+                <span class="inline-flex items-center gap-1 text-xs font-bold {{ 'text-emerald-600 bg-emerald-50' if embedding_count > 0 else 'text-gray-400 bg-gray-50' }} px-2 py-0.5 rounded-full">
+                    <i class="fa-solid fa-camera-retro"></i> {{ embedding_count }} registered
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Per-Subject Attendance Stats -->
+<div class="section-card mb-6">
+    <div class="flex items-center gap-3 px-6 pt-6 pb-4 border-b border-gray-100">
+        <div class="w-10 h-10 grad-emerald rounded-xl flex items-center justify-center shadow">
+            <i class="fa-solid fa-chart-pie text-white text-base"></i>
+        </div>
+        <div>
+            <h2 class="text-base font-bold text-gray-900">Subject-wise Attendance</h2>
+            <p class="text-xs text-gray-500">Attendance breakdown across your assigned subjects</p>
+        </div>
+    </div>
+
+    {% if subject_stats %}
+    <div class="divide-y divide-gray-50 px-6">
+        {% for stat in subject_stats %}
+        <div class="py-4">
+            <div class="flex items-center justify-between mb-2">
+                <div>
+                    <p class="font-bold text-gray-900 text-sm">{{ stat.subject_name }}</p>
+                    <p class="text-xs text-gray-400 font-mono">{{ stat.subject_code }}</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-lg font-black {% if stat.percentage >= 75 %}text-emerald-600{% elif stat.percentage >= 50 %}text-amber-600{% else %}text-rose-600{% endif %}">
+                        {{ stat.percentage }}%
+                    </p>
+                    <p class="text-[10px] text-gray-400">{{ (stat.present_count or 0) + (stat.late_count or 0) }}/{{ stat.total_sessions }} sessions</p>
+                </div>
+            </div>
+            <!-- Progress bar -->
+            <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                <div class="h-full rounded-full transition-all duration-500
+                    {% if stat.percentage >= 75 %}bg-gradient-to-r from-emerald-400 to-emerald-500
+                    {% elif stat.percentage >= 50 %}bg-gradient-to-r from-amber-400 to-amber-500
+                    {% else %}bg-gradient-to-r from-rose-400 to-rose-500{% endif %}"
+                    style="width: {{ stat.percentage }}%"></div>
+            </div>
+            <div class="flex gap-4 mt-1.5 text-[10px] text-gray-400">
+                <span><i class="fa-solid fa-circle text-emerald-400 mr-0.5"></i> Present: {{ stat.present_count or 0 }}</span>
+                <span><i class="fa-solid fa-circle text-amber-400 mr-0.5"></i> Late: {{ stat.late_count or 0 }}</span>
+                <span><i class="fa-solid fa-circle text-rose-400 mr-0.5"></i> Absent: {{ stat.absent_count or 0 }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="py-12 text-center">
+        <p class="text-gray-400 text-sm">No attendance data available for this student yet.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Recent Attendance History -->
+<div class="section-card">
+    <div class="flex items-center gap-3 px-6 pt-6 pb-4 border-b border-gray-100">
+        <div class="w-10 h-10 grad-sky rounded-xl flex items-center justify-center shadow">
+            <i class="fa-solid fa-clock-rotate-left text-white text-base"></i>
+        </div>
+        <div>
+            <h2 class="text-base font-bold text-gray-900">Recent Attendance History</h2>
+            <p class="text-xs text-gray-500">Last 50 sessions</p>
+        </div>
+    </div>
+
+    {% if recent_records %}
+    <div class="overflow-x-auto">
+        <table class="data-table min-w-full">
+            <thead>
+                <tr>
+                    <th class="text-left px-5 py-3">Date</th>
+                    <th class="text-left px-5 py-3">Subject</th>
+                    <th class="text-left px-5 py-3">Time</th>
+                    <th class="text-left px-5 py-3">Status</th>
+                    <th class="text-left px-5 py-3">Method</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in recent_records %}
+                <tr>
+                    <td class="px-5 py-3 text-sm text-gray-600">{{ record.session_date }}</td>
+                    <td class="px-5 py-3">
+                        <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">{{ record.subject_code }}</span>
+                    </td>
+                    <td class="px-5 py-3 text-xs text-gray-400">{{ record.start_time }} – {{ record.end_time }}</td>
+                    <td class="px-5 py-3">
+                        {% if record.status == 'Present' %}
+                        <span class="badge-success"><i class="fa-solid fa-check mr-0.5"></i>Present</span>
+                        {% elif record.status == 'Absent' %}
+                        <span class="badge-danger"><i class="fa-solid fa-xmark mr-0.5"></i>Absent</span>
+                        {% else %}
+                        <span class="badge-warning">{{ record.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-5 py-3 text-xs text-gray-400 font-mono">{{ record.verification_method or '—' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="py-12 text-center">
+        <p class="text-gray-400 text-sm">No attendance history yet.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

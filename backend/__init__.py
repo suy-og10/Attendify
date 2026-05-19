@@ -177,4 +177,65 @@ def create_app(config_class=None):
 
     start_auto_attendance_scheduler()
 
+    def _auto_end_sessions(app):
+        """Background thread: auto-end sessions past their scheduled end_time."""
+        from .database import query_db as _q, execute_db as _x
+        while True:
+            try:
+                with app.app_context():
+                    now = datetime.datetime.now()
+                    today_iso = now.date().isoformat()
+                    current_time = now.strftime('%H:%M:%S')
+
+                    # 1. End ONGOING sessions whose end_time has passed today
+                    ongoing_expired = _q("""
+                        SELECT csess.session_id, cs.division, cs.academic_year, s.dept_id, cs.teacher_id
+                        FROM class_sessions csess
+                        JOIN class_schedules cs ON csess.schedule_id = cs.schedule_id
+                        JOIN subjects s ON cs.subject_id = s.subject_id
+                        WHERE csess.session_date = %s
+                          AND csess.status = 'ONGOING'
+                          AND cs.end_time <= %s
+                    """, (today_iso, current_time))
+
+                    for sess in (ongoing_expired or []):
+                        try:
+                            _x("UPDATE class_sessions SET status = 'COMPLETED', actual_end_time = CURRENT_TIMESTAMP WHERE session_id = %s", (sess['session_id'],))
+                            # Mark unmarked students as Absent
+                            _x("""
+                                INSERT INTO attendance_records (session_id, student_id, status, verification_method, marked_by)
+                                SELECT %s, st.student_id, 'Absent', 'MANUAL', %s
+                                FROM students st
+                                WHERE st.division = %s AND st.academic_year = %s AND st.dept_id = %s AND st.is_active = TRUE
+                                  AND st.student_id NOT IN (SELECT ar.student_id FROM attendance_records ar WHERE ar.session_id = %s)
+                            """, (sess['session_id'], sess['teacher_id'], sess['division'], sess['academic_year'], sess['dept_id'], sess['session_id']))
+                            app.logger.info(f"Auto-ended ONGOING session {sess['session_id']} (end_time passed)")
+                        except Exception as inner_e:
+                            app.logger.error(f"Error auto-ending session {sess['session_id']}: {inner_e}")
+
+                    # 2. Mark past SCHEDULED sessions (date < today) as COMPLETED
+                    past_scheduled = _q("""
+                        SELECT csess.session_id
+                        FROM class_sessions csess
+                        WHERE csess.session_date < %s
+                          AND csess.status IN ('SCHEDULED', 'ONGOING')
+                    """, (today_iso,))
+
+                    for sess in (past_scheduled or []):
+                        try:
+                            _x("UPDATE class_sessions SET status = 'COMPLETED' WHERE session_id = %s", (sess['session_id'],))
+                            app.logger.info(f"Auto-completed past session {sess['session_id']} (date passed)")
+                        except Exception as inner_e:
+                            app.logger.error(f"Error auto-completing past session {sess['session_id']}: {inner_e}")
+
+            except Exception as e:
+                app.logger.error(f"Auto-end sessions loop error: {e}", exc_info=True)
+            time.sleep(60)
+
+    def start_auto_end_scheduler():
+        app.logger.info("Starting auto-end sessions scheduler thread")
+        threading.Thread(target=_auto_end_sessions, args=(app,), daemon=True).start()
+
+    start_auto_end_scheduler()
+
     return app

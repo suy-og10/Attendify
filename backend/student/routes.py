@@ -1,4 +1,6 @@
-from flask import Blueprint, render_template, session, redirect, url_for, flash
+from flask import Blueprint, render_template, session, redirect, url_for, flash, current_app, send_file, request
+import os
+from datetime import date
 from backend.utils import login_required, role_required
 from backend.database import query_db
 
@@ -53,7 +55,50 @@ def dashboard():
         else:
             stat['attendance_percentage'] = 0.0
 
-    return render_template('student/dashboard.html', student=student, attendance_stats=attendance_stats)
+    # Get face embedding count
+    embedding_count = query_db(
+        "SELECT COUNT(*) as count FROM face_embeddings WHERE student_id = %s AND is_active = TRUE",
+        (student['student_id'],), one=True
+    )
+    
+    # Get selected date schedule
+    target_date = request.args.get('date')
+    if not target_date:
+        target_date = date.today().isoformat()
+        
+    todays_classes = query_db("""
+        SELECT csess.session_id, csess.status, csess.session_date, cs.start_time, cs.end_time, 
+               sub.subject_name, sub.subject_code, u.full_name as teacher_name,
+               ar.status as attendance_status
+        FROM class_sessions csess
+        JOIN class_schedules cs ON csess.schedule_id = cs.schedule_id
+        JOIN subjects sub ON cs.subject_id = sub.subject_id
+        JOIN users u ON cs.teacher_id = u.user_id
+        LEFT JOIN attendance_records ar ON csess.session_id = ar.session_id AND ar.student_id = %s
+        WHERE csess.session_date = %s 
+          AND cs.division = %s 
+          AND cs.academic_year = %s
+        ORDER BY cs.start_time ASC
+    """, (student['student_id'], target_date, student['division'], student['academic_year']))
+
+    # Get recent course materials
+    recent_materials = query_db("""
+        SELECT DISTINCT cm.material_id, cm.title, cm.file_name, cm.created_at, sub.subject_code
+        FROM course_materials cm
+        JOIN class_schedules cs ON cm.subject_id = cs.subject_id
+        JOIN subjects sub ON cm.subject_id = sub.subject_id
+        WHERE cs.division = %s AND cs.academic_year = %s AND cm.is_published = TRUE
+        ORDER BY cm.created_at DESC
+        LIMIT 5
+    """, (student['division'], student['academic_year']))
+
+    return render_template('student/dashboard.html', 
+                           student=student, 
+                           attendance_stats=attendance_stats,
+                           embedding_count=embedding_count['count'] if embedding_count else 0,
+                           todays_classes=todays_classes or [],
+                           recent_materials=recent_materials or [],
+                           selected_date=target_date)
 
 @student_bp.route('/subject/<int:subject_id>/details')
 @login_required
@@ -73,6 +118,7 @@ def view_details(subject_id):
         
     details_query = """
         SELECT 
+            cs.session_id,
             cs.session_date,
             cs.actual_start_time,
             cs.actual_end_time,
@@ -94,4 +140,95 @@ def view_details(subject_id):
         (student['student_id'], subject_id, student['division'], student['academic_year'])
     )
     
+    # Fetch notes for these sessions
+    if records:
+        session_ids = [str(r['session_id']) for r in records]
+        placeholders = ','.join(['%s'] * len(session_ids))
+        notes = query_db(f"""
+            SELECT sn.session_id, sn.note_text, u.full_name as author, sn.created_at
+            FROM session_notes sn
+            JOIN users u ON sn.teacher_id = u.user_id
+            WHERE sn.session_id IN ({placeholders})
+            ORDER BY sn.created_at ASC
+        """, tuple(session_ids))
+        
+        # Attach notes to records
+        notes_by_session = {}
+        for n in (notes or []):
+            if n['session_id'] not in notes_by_session:
+                notes_by_session[n['session_id']] = []
+            notes_by_session[n['session_id']].append(n)
+            
+        for r in records:
+            r['notes'] = notes_by_session.get(r['session_id'], [])
+    
     return render_template('student/view_details.html', subject=subject, records=records)
+
+@student_bp.route('/materials')
+@login_required
+@role_required('Student')
+def course_materials():
+    user_id = session.get('user_id')
+    student = query_db("SELECT division, academic_year FROM students WHERE user_id = %s", (user_id,), one=True)
+    if not student:
+        flash("Student profile not found.", "error")
+        return redirect(url_for('auth.home'))
+        
+    subject_filter = request.args.get('subject_id', type=int)
+    
+    # Get subjects for filter
+    subjects = query_db("""
+        SELECT DISTINCT sub.subject_id, sub.subject_code, sub.subject_name
+        FROM class_schedules cs
+        JOIN subjects sub ON cs.subject_id = sub.subject_id
+        WHERE cs.division = %s AND cs.academic_year = %s
+        ORDER BY sub.subject_code
+    """, (student['division'], student['academic_year']))
+    
+    # Build materials query
+    query = """
+        SELECT DISTINCT cm.material_id, cm.title, cm.description, cm.file_name, cm.file_size, cm.file_path, cm.is_published, cm.created_at, cm.subject_id, cm.teacher_id, sub.subject_name, sub.subject_code, u.full_name as teacher_name
+        FROM course_materials cm
+        JOIN class_schedules cs ON cm.subject_id = cs.subject_id AND cm.teacher_id = cs.teacher_id
+        JOIN subjects sub ON cm.subject_id = sub.subject_id
+        JOIN users u ON cm.teacher_id = u.user_id
+        WHERE cs.division = %s AND cs.academic_year = %s AND cm.is_published = TRUE
+    """
+    params = [student['division'], student['academic_year']]
+    
+    if subject_filter:
+        query += " AND cm.subject_id = %s"
+        params.append(subject_filter)
+        
+    query += " ORDER BY cm.created_at DESC"
+    
+    materials = query_db(query, params)
+    
+    return render_template('student/materials.html', 
+                           materials=materials or [], 
+                           subjects=subjects or [],
+                           subject_filter=subject_filter)
+
+@student_bp.route('/materials/download/<int:material_id>')
+@login_required
+@role_required('Student')
+def download_material(material_id):
+    user_id = session.get('user_id')
+    student = query_db("SELECT division, academic_year FROM students WHERE user_id = %s", (user_id,), one=True)
+    
+    # Verify student is enrolled in the subject of this material
+    material = query_db("""
+        SELECT cm.file_path, cm.file_name 
+        FROM course_materials cm
+        JOIN class_schedules cs ON cm.subject_id = cs.subject_id AND cm.teacher_id = cs.teacher_id
+        WHERE cm.material_id = %s 
+          AND cs.division = %s 
+          AND cs.academic_year = %s
+          AND cm.is_published = TRUE
+    """, (material_id, student['division'], student['academic_year']), one=True)
+    
+    if not material or not os.path.exists(material['file_path']):
+        flash("File not found or you do not have permission to access it.", "error")
+        return redirect(url_for('student.course_materials'))
+        
+    return send_file(material['file_path'], as_attachment=True, download_name=material['file_name'])

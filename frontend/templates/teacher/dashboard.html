@@ -64,6 +64,62 @@
             Reports <i class="fa-solid fa-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i>
         </span>
     </a>
+    <a href="{{ url_for('teacher.correction_requests') }}"
+        class="section-card p-7 card-hover flex flex-col items-start gap-4 relative overflow-hidden group">
+        <div class="absolute inset-0 grad-amber opacity-0 group-hover:opacity-5 transition-opacity"></div>
+        <div class="w-14 h-14 grad-amber rounded-2xl flex items-center justify-center shadow-lg">
+            <i class="fa-solid fa-pen-to-square text-white text-2xl"></i>
+        </div>
+        <div>
+            <h3 class="font-bold text-gray-900 text-base mb-1.5">Corrections</h3>
+            <p class="text-xs text-gray-500 leading-relaxed">Submit and track attendance correction requests.</p>
+        </div>
+        <span class="inline-flex items-center gap-1.5 text-amber-600 text-sm font-bold mt-auto">
+            View <i class="fa-solid fa-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i>
+        </span>
+    </a>
+    <a href="{{ url_for('teacher.low_attendance_report') }}"
+        class="section-card p-7 card-hover flex flex-col items-start gap-4 relative overflow-hidden group">
+        <div class="absolute inset-0 grad-rose opacity-0 group-hover:opacity-5 transition-opacity"></div>
+        <div class="w-14 h-14 grad-rose rounded-2xl flex items-center justify-center shadow-lg">
+            <i class="fa-solid fa-triangle-exclamation text-white text-2xl"></i>
+        </div>
+        <div>
+            <h3 class="font-bold text-gray-900 text-base mb-1.5">Low Attendance</h3>
+            <p class="text-xs text-gray-500 leading-relaxed">Students below attendance threshold in your classes.</p>
+        </div>
+        <span class="inline-flex items-center gap-1.5 text-rose-600 text-sm font-bold mt-auto">
+            Report <i class="fa-solid fa-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i>
+        </span>
+    </a>
+    <a href="{{ url_for('teacher.course_materials') }}"
+        class="section-card p-7 card-hover flex flex-col items-start gap-4 relative overflow-hidden group">
+        <div class="absolute inset-0 bg-gradient-to-br from-violet-500 to-purple-600 opacity-0 group-hover:opacity-5 transition-opacity"></div>
+        <div class="w-14 h-14 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+            <i class="fa-solid fa-folder-open text-white text-2xl"></i>
+        </div>
+        <div>
+            <h3 class="font-bold text-gray-900 text-base mb-1.5">Course Materials</h3>
+            <p class="text-xs text-gray-500 leading-relaxed">Upload and manage study resources for students.</p>
+        </div>
+        <span class="inline-flex items-center gap-1.5 text-violet-600 text-sm font-bold mt-auto">
+            Manage <i class="fa-solid fa-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i>
+        </span>
+    </a>
+    <a href="{{ url_for('teacher.session_timeline') }}"
+        class="section-card p-7 card-hover flex flex-col items-start gap-4 relative overflow-hidden group">
+        <div class="absolute inset-0 bg-gradient-to-br from-cyan-500 to-teal-500 opacity-0 group-hover:opacity-5 transition-opacity"></div>
+        <div class="w-14 h-14 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-2xl flex items-center justify-center shadow-lg">
+            <i class="fa-solid fa-timeline text-white text-2xl"></i>
+        </div>
+        <div>
+            <h3 class="font-bold text-gray-900 text-base mb-1.5">Session Timeline</h3>
+            <p class="text-xs text-gray-500 leading-relaxed">Class notes, session history, and topic tracking.</p>
+        </div>
+        <span class="inline-flex items-center gap-1.5 text-teal-600 text-sm font-bold mt-auto">
+            Timeline <i class="fa-solid fa-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i>
+        </span>
+    </a>
 </div>
 
 <!-- Schedules Table -->

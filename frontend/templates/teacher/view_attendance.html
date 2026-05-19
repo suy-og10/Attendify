@@ -63,6 +63,7 @@
                     <th class="text-left px-5 py-3">Method</th>
                     <th class="text-left px-5 py-3">Confidence</th>
                     <th class="text-left px-5 py-3">Marked At</th>
+                    {% if session_info.status == 'COMPLETED' %}<th class="text-left px-5 py-3">Action</th>{% endif %}
                 </tr>
             </thead>
             <tbody>
@@ -103,6 +104,16 @@
                         {% else %}—{% endif %}
                     </td>
                     <td class="px-5 py-4 text-xs text-gray-400">{{ record.marked_time }}</td>
+                    {% if session_info.status == 'COMPLETED' %}
+                    <td class="px-5 py-4">
+                        {% if record.attendance_id %}
+                        <button onclick="openCorrectionModal({{ record.attendance_id }}, '{{ record.student_name }}', '{{ record.status }}')"
+                            class="text-indigo-600 hover:text-indigo-800 text-xs font-bold transition-colors">
+                            <i class="fa-solid fa-pen-to-square mr-0.5"></i>Correct
+                        </button>
+                        {% else %}—{% endif %}
+                    </td>
+                    {% endif %}
                 </tr>
                 {% endfor %}
             </tbody>
@@ -117,4 +128,58 @@
     </div>
     {% endif %}
 </div>
+
+{% if session_info.status == 'COMPLETED' %}
+<!-- Correction Modal -->
+<div id="correctionModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold text-gray-900"><i class="fa-solid fa-pen-to-square text-indigo-500 mr-2"></i>Request Correction</h3>
+            <button onclick="closeCorrectionModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+        <p class="text-sm text-gray-600 mb-1">Student: <span id="modalStudentName" class="font-bold"></span></p>
+        <p class="text-sm text-gray-600 mb-4">Current: <span id="modalCurrentStatus" class="font-bold"></span></p>
+        <input type="hidden" id="modalAttendanceId">
+        <div class="mb-3">
+            <label class="text-xs font-bold text-gray-600 uppercase block mb-1">Change To</label>
+            <select id="modalRequestedStatus" class="w-full bg-gray-50 border border-gray-200 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="Present">Present</option>
+                <option value="Absent">Absent</option>
+                <option value="Late">Late</option>
+            </select>
+        </div>
+        <div class="mb-4">
+            <label class="text-xs font-bold text-gray-600 uppercase block mb-1">Reason *</label>
+            <textarea id="modalReason" rows="3" placeholder="Explain why this correction is needed..." class="w-full bg-gray-50 border border-gray-200 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="submitCorrection()" id="submitCorrBtn" class="btn-primary flex-1 text-center text-sm"><i class="fa-solid fa-paper-plane mr-1"></i>Submit</button>
+            <button onclick="closeCorrectionModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm py-2 px-4 rounded-xl">Cancel</button>
+        </div>
+    </div>
+</div>
+<script>
+function openCorrectionModal(attId, name, status) {
+    document.getElementById('modalAttendanceId').value = attId;
+    document.getElementById('modalStudentName').textContent = name;
+    document.getElementById('modalCurrentStatus').textContent = status;
+    document.getElementById('modalReason').value = '';
+    document.getElementById('correctionModal').classList.remove('hidden');
+}
+function closeCorrectionModal() { document.getElementById('correctionModal').classList.add('hidden'); }
+async function submitCorrection() {
+    const attId = parseInt(document.getElementById('modalAttendanceId').value);
+    const status = document.getElementById('modalRequestedStatus').value;
+    const reason = document.getElementById('modalReason').value.trim();
+    if (!reason) { alert('Please provide a reason.'); return; }
+    const btn = document.getElementById('submitCorrBtn');
+    btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+    try {
+        const r = await fetch('/teacher/api/corrections/submit', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({attendance_id:attId, requested_status:status, reason:reason}) });
+        const d = await r.json();
+        if (d.success) { closeCorrectionModal(); location.reload(); } else { alert(d.error || 'Failed'); }
+    } catch(e) { alert('Network error'); } finally { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-paper-plane mr-1"></i>Submit'; }
+}
+</script>
+{% endif %}
 {% endblock %}

@@ -14,7 +14,7 @@ import io
 import pandas as pd
 import cv2 # Make sure OpenCV is imported if needed directly here
 import numpy as np # Needed for image processing
-from datetime import date
+from datetime import date, datetime
 
 from werkzeug.utils import secure_filename
 # Import the new logic function we will create
@@ -64,10 +64,12 @@ def add_schedule():
     subjects = query_db("SELECT subject_id, subject_name, subject_code FROM subjects WHERE dept_id = %s AND is_active = TRUE ORDER BY subject_code", (teacher_dept_id,))
     days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
+    from datetime import datetime
+
     if request.method == 'POST':
         subject_id = request.form.get('subject_id', type=int)
         division = request.form.get('division', '').strip().upper()
-        day_of_week = request.form.get('day_of_week', type=int)
+        scheduled_date_str = request.form.get('scheduled_date')
         start_time = request.form.get('start_time')
         end_time = request.form.get('end_time')
         academic_year = request.form.get('academic_year', '').strip()
@@ -75,29 +77,47 @@ def add_schedule():
         is_active = True
         error = None
 
-        if not all([subject_id, division, academic_year]) or day_of_week is None or not start_time or not end_time:
+        if not all([subject_id, division, academic_year, scheduled_date_str, start_time, end_time]):
             error = "All fields except Classroom are required."
-        elif day_of_week < 0 or day_of_week > 6:
-             error = "Invalid day selected."
         elif start_time >= end_time:
              error = "Start time must be before end time."
 
         if error is None:
             try:
-                execute_db("""
+                # Derive day_of_week from scheduled_date
+                scheduled_date = datetime.strptime(scheduled_date_str, '%Y-%m-%d').date()
+                day_of_week = scheduled_date.weekday() # 0 = Monday, 6 = Sunday
+                
+                db = get_db()
+                cursor = db.cursor()
+                
+                # Insert schedule
+                cursor.execute("""
                     INSERT INTO class_schedules (subject_id, teacher_id, division, day_of_week, start_time, end_time, academic_year, classroom, is_active)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, (subject_id, teacher_id, division, day_of_week, start_time, end_time, academic_year, classroom, is_active))
-                flash("Class schedule added successfully.", "success")
-                return redirect(url_for('.dashboard')) # Redirect to dashboard
+                
+                schedule_id = cursor.lastrowid
+                
+                # Immediately create a SCHEDULED session for this specific date
+                cursor.execute("""
+                    INSERT INTO class_sessions (schedule_id, session_date, status)
+                    VALUES (%s, %s, 'SCHEDULED')
+                """, (schedule_id, scheduled_date_str))
+                
+                db.commit()
+                cursor.close()
+                
+                flash("Class scheduled successfully and added to upcoming sessions.", "success")
+                return redirect(url_for('.select_session')) # Redirect to session select to see it
             except Exception as e:
                  error = f"Database error adding schedule: {e}"
                  current_app.logger.error(f"Error adding schedule by Teacher {g.user['username']}: {e}", exc_info=True)
 
         flash(error, 'error')
-        return render_template('teacher/add_schedule.html', subjects=subjects or [], days=days, form_data=request.form)
+        return render_template('teacher/add_schedule.html', subjects=subjects or [], form_data=request.form)
 
-    return render_template('teacher/add_schedule.html', subjects=subjects or [], days=days)
+    return render_template('teacher/add_schedule.html', subjects=subjects or [])
 
 # --- Student Management ---
 @teacher_bp.route('/students')
@@ -291,7 +311,9 @@ def select_session():
         }
 
     # Fetch ALL sessions for this teacher for historical/upcoming view
-    all_sessions = query_db("""
+    target_date = request.args.get('date')
+    
+    query = """
         SELECT csess.session_id, csess.session_date, csess.status,
                s.subject_name, s.subject_code, cs.division, cs.academic_year,
                cs.start_time, cs.end_time
@@ -299,14 +321,25 @@ def select_session():
         JOIN class_schedules cs ON csess.schedule_id = cs.schedule_id
         JOIN subjects s ON cs.subject_id = s.subject_id
         WHERE cs.teacher_id = %s
-        ORDER BY csess.session_date DESC, cs.start_time DESC
-    """, (teacher_id,))
+    """
+    params = [teacher_id]
+    
+    if target_date:
+        query += " AND csess.session_date = %s"
+        params.append(target_date)
+        
+    query += " ORDER BY csess.session_date DESC, cs.start_time DESC"
+    if not target_date:
+        query += " LIMIT 50" # limit if showing all
+        
+    all_sessions = query_db(query, tuple(params))
 
     return render_template('session_select.html', 
                            schedules=schedules, 
                            sessions_today=sessions_today, 
                            today_date=today_date_iso,
-                           all_sessions=all_sessions)
+                           all_sessions=all_sessions,
+                           selected_date=target_date)
 
 
 @teacher_bp.route('/attendance/start_session', methods=['POST'])
@@ -912,3 +945,566 @@ def api_end_session():
     except Exception as e:
         current_app.logger.error(f"Error ending session {session_id}: {e}", exc_info=True)
         return jsonify({"error": f"Database error: {e}"}), 500
+
+
+# ============================================================
+# FEATURE 2 — Attendance Correction Requests
+# ============================================================
+
+@teacher_bp.route('/corrections')
+@login_required
+@role_required('Teacher')
+def correction_requests():
+    """List all correction requests submitted by this teacher."""
+    teacher_id = session['user_id']
+    status_filter = request.args.get('status', '')
+
+    query = """
+        SELECT acr.*, ar.status AS current_status, st.student_name, st.prn,
+               sub.subject_code, sub.subject_name, csess.session_date,
+               cs.division, reviewer.full_name AS reviewed_by_name
+        FROM attendance_correction_requests acr
+        JOIN attendance_records ar ON acr.attendance_id = ar.attendance_id
+        JOIN students st ON ar.student_id = st.student_id
+        JOIN class_sessions csess ON ar.session_id = csess.session_id
+        JOIN class_schedules cs ON csess.schedule_id = cs.schedule_id
+        JOIN subjects sub ON cs.subject_id = sub.subject_id
+        LEFT JOIN users reviewer ON acr.reviewed_by = reviewer.user_id
+        WHERE acr.requested_by = %s
+    """
+    params = [teacher_id]
+
+    if status_filter and status_filter in ('PENDING', 'APPROVED', 'REJECTED'):
+        query += " AND acr.status = %s"
+        params.append(status_filter)
+
+    query += " ORDER BY acr.created_at DESC LIMIT 200"
+
+    corrections = query_db(query, params)
+    return render_template('teacher/correction_requests.html',
+                           corrections=corrections or [],
+                           status_filter=status_filter)
+
+
+@teacher_bp.route('/api/corrections/submit', methods=['POST'])
+@login_required
+@role_required('Teacher')
+def api_submit_correction():
+    """Submit a correction request for an attendance record."""
+    teacher_id = session['user_id']
+    attendance_id = request.json.get('attendance_id', type=int) if isinstance(request.json.get('attendance_id'), str) else request.json.get('attendance_id')
+    requested_status = request.json.get('requested_status')
+    reason = request.json.get('reason', '').strip()
+
+    if not attendance_id or not requested_status or not reason:
+        return jsonify({"error": "attendance_id, requested_status, and reason are required"}), 400
+
+    if requested_status not in ('Present', 'Absent', 'Late'):
+        return jsonify({"error": "Invalid requested_status"}), 400
+
+    # Verify this attendance record belongs to a session owned by this teacher
+    ownership = query_db("""
+        SELECT ar.attendance_id, csess.status AS session_status
+        FROM attendance_records ar
+        JOIN class_sessions csess ON ar.session_id = csess.session_id
+        JOIN class_schedules cs ON csess.schedule_id = cs.schedule_id
+        WHERE ar.attendance_id = %s AND cs.teacher_id = %s
+    """, (attendance_id, teacher_id), one=True)
+
+    if not ownership:
+        return jsonify({"error": "Attendance record not found or access denied"}), 403
+
+    if ownership['session_status'] != 'COMPLETED':
+        return jsonify({"error": "Corrections can only be requested for completed sessions"}), 400
+
+    # Check for existing pending request
+    existing = query_db(
+        "SELECT request_id FROM attendance_correction_requests WHERE attendance_id = %s AND status = 'PENDING'",
+        (attendance_id,), one=True
+    )
+    if existing:
+        return jsonify({"error": "A pending correction request already exists for this record"}), 409
+
+    try:
+        request_id = execute_db("""
+            INSERT INTO attendance_correction_requests (attendance_id, requested_status, reason, requested_by)
+            VALUES (%s, %s, %s, %s)
+        """, (attendance_id, requested_status, reason, teacher_id))
+        return jsonify({"success": True, "request_id": request_id}), 201
+    except Exception as e:
+        current_app.logger.error(f"Error submitting correction: {e}", exc_info=True)
+        return jsonify({"error": f"Database error: {e}"}), 500
+
+
+# ============================================================
+# FEATURE 3 — Student Profile with Attendance History
+# ============================================================
+
+@teacher_bp.route('/students/profile/<int:student_id>')
+@login_required
+@role_required('Teacher')
+def student_profile(student_id):
+    """View detailed student profile with attendance history."""
+    teacher_id = session['user_id']
+
+    # Verify teacher has access to this student
+    is_allowed = query_db("""
+        SELECT 1
+        FROM class_schedules cs
+        JOIN subjects sub ON cs.subject_id = sub.subject_id
+        JOIN students s ON s.division = cs.division
+                        AND s.academic_year = cs.academic_year
+                        AND s.dept_id = sub.dept_id
+        WHERE cs.teacher_id = %s AND s.student_id = %s AND cs.is_active = TRUE
+    """, (teacher_id, student_id), one=True)
+
+    if not is_allowed:
+        flash("You do not have permission to view this student.", "error")
+        return redirect(url_for('.list_students'))
+
+    student = query_db("SELECT s.*, d.dept_name, d.dept_code FROM students s JOIN departments d ON s.dept_id = d.dept_id WHERE s.student_id = %s", (student_id,), one=True)
+    if not student:
+        flash("Student not found.", "error")
+        return redirect(url_for('.list_students'))
+
+    # Per-subject attendance stats (only for this teacher's subjects)
+    subject_stats = query_db("""
+        SELECT sub.subject_id, sub.subject_name, sub.subject_code,
+               COUNT(DISTINCT csess.session_id) AS total_sessions,
+               SUM(CASE WHEN ar.status = 'Present' THEN 1 ELSE 0 END) AS present_count,
+               SUM(CASE WHEN ar.status = 'Late' THEN 1 ELSE 0 END) AS late_count,
+               SUM(CASE WHEN ar.status = 'Absent' THEN 1 ELSE 0 END) AS absent_count
+        FROM subjects sub
+        JOIN class_schedules cs ON sub.subject_id = cs.subject_id
+        JOIN class_sessions csess ON cs.schedule_id = csess.schedule_id AND csess.status = 'COMPLETED'
+        LEFT JOIN attendance_records ar ON csess.session_id = ar.session_id AND ar.student_id = %s
+        WHERE cs.teacher_id = %s
+          AND cs.division = %s AND cs.academic_year = %s
+          AND sub.dept_id = %s AND cs.is_active = TRUE
+        GROUP BY sub.subject_id, sub.subject_name, sub.subject_code
+    """, (student_id, teacher_id, student['division'], student['academic_year'], student['dept_id']))
+
+    for stat in (subject_stats or []):
+        total = stat['total_sessions'] or 0
+        present = (stat['present_count'] or 0) + (stat['late_count'] or 0)
+        stat['percentage'] = round((present / total) * 100, 1) if total > 0 else 0
+
+    # Recent session-by-session history
+    recent_records = query_db("""
+        SELECT csess.session_date, cs.start_time, cs.end_time,
+               sub.subject_name, sub.subject_code, cs.division,
+               COALESCE(ar.status, 'Absent') AS status,
+               ar.verification_method, ar.marked_time
+        FROM class_sessions csess
+        JOIN class_schedules cs ON csess.schedule_id = cs.schedule_id
+        JOIN subjects sub ON cs.subject_id = sub.subject_id
+        LEFT JOIN attendance_records ar ON csess.session_id = ar.session_id AND ar.student_id = %s
+        WHERE cs.teacher_id = %s AND csess.status = 'COMPLETED'
+          AND cs.division = %s AND cs.academic_year = %s
+        ORDER BY csess.session_date DESC, cs.start_time DESC
+        LIMIT 50
+    """, (student_id, teacher_id, student['division'], student['academic_year']))
+
+    # Embedding count
+    embedding_count = query_db(
+        "SELECT COUNT(*) as count FROM face_embeddings WHERE student_id = %s AND is_active = TRUE",
+        (student_id,), one=True
+    )
+
+    return render_template('teacher/student_profile.html',
+                           student=dict(student),
+                           subject_stats=subject_stats or [],
+                           recent_records=recent_records or [],
+                           embedding_count=(embedding_count['count'] if embedding_count else 0))
+
+
+# ============================================================
+# FEATURE 4 — Low-Attendance Report
+# ============================================================
+
+@teacher_bp.route('/reports/low-attendance')
+@login_required
+@role_required('Teacher')
+def low_attendance_report():
+    """Show students below attendance threshold in teacher's classes."""
+    teacher_id = session['user_id']
+    threshold = request.args.get('threshold', 75, type=int)
+    subject_filter = request.args.get('subject_id', type=int)
+    division_filter = request.args.get('division', '')
+
+    # Get teacher's subjects for the filter dropdown
+    subjects = query_db("""
+        SELECT DISTINCT s.subject_id, s.subject_code, s.subject_name
+        FROM subjects s JOIN class_schedules cs ON s.subject_id = cs.subject_id
+        WHERE cs.teacher_id = %s AND s.is_active = TRUE
+        ORDER BY s.subject_code
+    """, (teacher_id,))
+
+    divisions = query_db("SELECT DISTINCT division FROM class_schedules WHERE teacher_id = %s ORDER BY division", (teacher_id,))
+
+    # Build the main query
+    query = """
+        SELECT st.student_id, st.student_name, st.prn, st.roll_no, st.division,
+               sub.subject_name, sub.subject_code, sub.subject_id,
+               COUNT(DISTINCT csess.session_id) AS total_sessions,
+               SUM(CASE WHEN ar.status IN ('Present', 'Late') THEN 1 ELSE 0 END) AS present_count
+        FROM students st
+        JOIN class_schedules cs ON st.division = cs.division
+                                AND st.academic_year = cs.academic_year
+        JOIN subjects sub ON cs.subject_id = sub.subject_id AND st.dept_id = sub.dept_id
+        JOIN class_sessions csess ON cs.schedule_id = csess.schedule_id AND csess.status = 'COMPLETED'
+        LEFT JOIN attendance_records ar ON csess.session_id = ar.session_id AND ar.student_id = st.student_id
+        WHERE cs.teacher_id = %s AND cs.is_active = TRUE AND st.is_active = TRUE
+    """
+    params = [teacher_id]
+
+    if subject_filter:
+        query += " AND sub.subject_id = %s"
+        params.append(subject_filter)
+
+    if division_filter:
+        query += " AND st.division = %s"
+        params.append(division_filter)
+
+    query += """
+        GROUP BY st.student_id, st.student_name, st.prn, st.roll_no, st.division,
+                 sub.subject_name, sub.subject_code, sub.subject_id
+        HAVING total_sessions > 0
+        ORDER BY (SUM(CASE WHEN ar.status IN ('Present', 'Late') THEN 1 ELSE 0 END) / COUNT(DISTINCT csess.session_id)) ASC
+    """
+
+    all_students = query_db(query, params)
+
+    # Filter by threshold and compute percentage
+    low_attendance = []
+    for s in (all_students or []):
+        total = s['total_sessions']
+        present = s['present_count'] or 0
+        pct = round((present / total) * 100, 1) if total > 0 else 0
+        if pct < threshold:
+            s['percentage'] = pct
+            low_attendance.append(s)
+
+    return render_template('teacher/low_attendance.html',
+                           students=low_attendance,
+                           subjects=subjects or [],
+                           divisions=divisions or [],
+                           threshold=threshold,
+                           subject_filter=subject_filter,
+                           division_filter=division_filter)
+
+
+# ============================================================
+# FEATURE 5 — Session Notes / Timeline
+# ============================================================
+
+@teacher_bp.route('/session-timeline')
+@login_required
+@role_required('Teacher')
+def session_timeline():
+    """Overview timeline of all sessions with notes for a subject."""
+    teacher_id = session['user_id']
+    subject_filter = request.args.get('subject_id', type=int)
+
+    subjects = query_db("""
+        SELECT DISTINCT s.subject_id, s.subject_code, s.subject_name
+        FROM subjects s JOIN class_schedules cs ON s.subject_id = cs.subject_id
+        WHERE cs.teacher_id = %s AND s.is_active = TRUE ORDER BY s.subject_code
+    """, (teacher_id,))
+
+    sessions_data = []
+    if subject_filter:
+        sessions_data = query_db("""
+            SELECT csess.session_id, csess.session_date, csess.status,
+                   cs.start_time, cs.end_time, cs.division, cs.academic_year,
+                   sub.subject_name, sub.subject_code,
+                   (SELECT COUNT(*) FROM attendance_records ar WHERE ar.session_id = csess.session_id AND ar.status = 'Present') AS present_count,
+                   (SELECT COUNT(*) FROM attendance_records ar WHERE ar.session_id = csess.session_id) AS total_marked,
+                   (SELECT COUNT(*) FROM session_notes sn WHERE sn.session_id = csess.session_id) AS note_count
+            FROM class_sessions csess
+            JOIN class_schedules cs ON csess.schedule_id = cs.schedule_id
+            JOIN subjects sub ON cs.subject_id = sub.subject_id
+            WHERE cs.teacher_id = %s AND sub.subject_id = %s
+            ORDER BY csess.session_date DESC, cs.start_time DESC
+            LIMIT 100
+        """, (teacher_id, subject_filter))
+
+    return render_template('teacher/session_timeline.html',
+                           subjects=subjects or [],
+                           sessions_data=sessions_data or [],
+                           subject_filter=subject_filter)
+
+
+@teacher_bp.route('/sessions/<int:session_id>/notes')
+@login_required
+@role_required('Teacher')
+def session_notes_page(session_id):
+    """View session details and notes."""
+    teacher_id = session['user_id']
+
+    session_info = query_db("""
+        SELECT csess.*, cs.division, cs.academic_year, cs.start_time, cs.end_time,
+               sub.subject_name, sub.subject_code, sub.subject_id,
+               u.full_name AS teacher_name
+        FROM class_sessions csess
+        JOIN class_schedules cs ON csess.schedule_id = cs.schedule_id
+        JOIN subjects sub ON cs.subject_id = sub.subject_id
+        JOIN users u ON cs.teacher_id = u.user_id
+        WHERE csess.session_id = %s AND cs.teacher_id = %s
+    """, (session_id, teacher_id), one=True)
+
+    if not session_info:
+        flash("Session not found or access denied.", "error")
+        return redirect(url_for('.session_timeline'))
+
+    # Get attendance stats
+    attendance_stats = query_db("""
+        SELECT
+            COUNT(*) AS total,
+            SUM(CASE WHEN status = 'Present' THEN 1 ELSE 0 END) AS present,
+            SUM(CASE WHEN status = 'Absent' THEN 1 ELSE 0 END) AS absent,
+            SUM(CASE WHEN status = 'Late' THEN 1 ELSE 0 END) AS late
+        FROM attendance_records WHERE session_id = %s
+    """, (session_id,), one=True)
+
+    # Get notes
+    notes = query_db("""
+        SELECT sn.*, u.full_name AS author_name
+        FROM session_notes sn
+        JOIN users u ON sn.teacher_id = u.user_id
+        WHERE sn.session_id = %s
+        ORDER BY sn.created_at ASC
+    """, (session_id,))
+
+    return render_template('teacher/session_notes.html',
+                           session_info=dict(session_info),
+                           stats=attendance_stats or {'total': 0, 'present': 0, 'absent': 0, 'late': 0},
+                           notes=notes or [])
+
+
+@teacher_bp.route('/api/sessions/<int:session_id>/notes', methods=['POST'])
+@login_required
+@role_required('Teacher')
+def api_add_note(session_id):
+    """Add a note to a session."""
+    teacher_id = session['user_id']
+    note_text = request.json.get('note_text', '').strip()
+
+    if not note_text:
+        return jsonify({"error": "Note text is required"}), 400
+
+    # Verify ownership
+    ownership = query_db("""
+        SELECT 1 FROM class_sessions csess
+        JOIN class_schedules cs ON csess.schedule_id = cs.schedule_id
+        WHERE csess.session_id = %s AND cs.teacher_id = %s
+    """, (session_id, teacher_id), one=True)
+
+    if not ownership:
+        return jsonify({"error": "Session not found or access denied"}), 403
+
+    try:
+        note_id = execute_db("""
+            INSERT INTO session_notes (session_id, teacher_id, note_text) VALUES (%s, %s, %s)
+        """, (session_id, teacher_id, note_text))
+
+        teacher_info = query_db("SELECT full_name FROM users WHERE user_id = %s", (teacher_id,), one=True)
+
+        return jsonify({
+            "success": True,
+            "note": {
+                "note_id": note_id,
+                "note_text": note_text,
+                "author_name": teacher_info['full_name'] if teacher_info else 'Unknown',
+                "created_at": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            }
+        }), 201
+    except Exception as e:
+        current_app.logger.error(f"Error adding note: {e}", exc_info=True)
+        return jsonify({"error": f"Database error: {e}"}), 500
+
+
+@teacher_bp.route('/api/sessions/<int:session_id>/notes/<int:note_id>', methods=['DELETE'])
+@login_required
+@role_required('Teacher')
+def api_delete_note(session_id, note_id):
+    """Delete a note."""
+    teacher_id = session['user_id']
+
+    note = query_db(
+        "SELECT note_id FROM session_notes WHERE note_id = %s AND session_id = %s AND teacher_id = %s",
+        (note_id, session_id, teacher_id), one=True
+    )
+    if not note:
+        return jsonify({"error": "Note not found or access denied"}), 404
+
+    try:
+        execute_db("DELETE FROM session_notes WHERE note_id = %s", (note_id,))
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        return jsonify({"error": f"Database error: {e}"}), 500
+
+
+# ============================================================
+# FEATURE 6 — Course Materials Upload/Publish
+# ============================================================
+
+MATERIAL_EXTENSIONS = {'pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'png', 'jpg', 'jpeg', 'txt'}
+
+
+def allowed_material_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in MATERIAL_EXTENSIONS
+
+
+@teacher_bp.route('/materials')
+@login_required
+@role_required('Teacher')
+def course_materials():
+    """List all course materials uploaded by this teacher."""
+    teacher_id = session['user_id']
+    subject_filter = request.args.get('subject_id', type=int)
+
+    subjects = query_db("""
+        SELECT DISTINCT s.subject_id, s.subject_code, s.subject_name
+        FROM subjects s JOIN class_schedules cs ON s.subject_id = cs.subject_id
+        WHERE cs.teacher_id = %s AND s.is_active = TRUE ORDER BY s.subject_code
+    """, (teacher_id,))
+
+    query = """
+        SELECT cm.*, sub.subject_name, sub.subject_code
+        FROM course_materials cm
+        JOIN subjects sub ON cm.subject_id = sub.subject_id
+        WHERE cm.teacher_id = %s
+    """
+    params = [teacher_id]
+
+    if subject_filter:
+        query += " AND cm.subject_id = %s"
+        params.append(subject_filter)
+
+    query += " ORDER BY cm.created_at DESC"
+    materials = query_db(query, params)
+
+    return render_template('teacher/course_materials.html',
+                           materials=materials or [],
+                           subjects=subjects or [],
+                           subject_filter=subject_filter)
+
+
+@teacher_bp.route('/materials/upload', methods=['GET', 'POST'])
+@login_required
+@role_required('Teacher')
+def upload_material():
+    """Upload a new course material."""
+    teacher_id = session['user_id']
+
+    subjects = query_db("""
+        SELECT DISTINCT s.subject_id, s.subject_code, s.subject_name
+        FROM subjects s JOIN class_schedules cs ON s.subject_id = cs.subject_id
+        WHERE cs.teacher_id = %s AND s.is_active = TRUE ORDER BY s.subject_code
+    """, (teacher_id,))
+
+    if request.method == 'POST':
+        subject_id = request.form.get('subject_id', type=int)
+        title = request.form.get('title', '').strip()
+        description = request.form.get('description', '').strip()
+        is_published = request.form.get('is_published') == 'on'
+        file = request.files.get('material_file')
+
+        error = None
+        if not subject_id or not title:
+            error = "Subject and title are required."
+        elif not file or file.filename == '':
+            error = "Please select a file to upload."
+        elif not allowed_material_file(file.filename):
+            error = f"File type not allowed. Allowed: {', '.join(sorted(MATERIAL_EXTENSIONS))}"
+        elif file.content_length and file.content_length > 16 * 1024 * 1024:
+            error = "File size exceeds 16MB limit."
+
+        # Verify teacher owns this subject
+        if not error:
+            owns_subject = query_db(
+                "SELECT 1 FROM class_schedules WHERE subject_id = %s AND teacher_id = %s AND is_active = TRUE",
+                (subject_id, teacher_id), one=True
+            )
+            if not owns_subject:
+                error = "You can only upload materials for your assigned subjects."
+
+        if error:
+            flash(error, 'error')
+            return render_template('teacher/upload_material.html', subjects=subjects or [], form_data=request.form)
+
+        try:
+            filename = secure_filename(file.filename)
+            # Create upload directory
+            upload_dir = os.path.join(current_app.config.get('UPLOAD_FOLDER', 'uploads'), 'materials', str(teacher_id))
+            os.makedirs(upload_dir, exist_ok=True)
+
+            # Make filename unique
+            base, ext = os.path.splitext(filename)
+            unique_filename = f"{base}_{int(datetime.now().timestamp())}{ext}"
+            file_path = os.path.join(upload_dir, unique_filename)
+
+            file.save(file_path)
+            file_size = os.path.getsize(file_path)
+
+            execute_db("""
+                INSERT INTO course_materials (subject_id, teacher_id, title, description, file_path, file_name, file_size, is_published)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """, (subject_id, teacher_id, title, description or None, file_path, filename, file_size, is_published))
+
+            flash(f"Material '{title}' uploaded successfully.", "success")
+            return redirect(url_for('.course_materials'))
+        except Exception as e:
+            current_app.logger.error(f"Error uploading material: {e}", exc_info=True)
+            flash(f"Error uploading file: {e}", "error")
+            return render_template('teacher/upload_material.html', subjects=subjects or [], form_data=request.form)
+
+    return render_template('teacher/upload_material.html', subjects=subjects or [], form_data={})
+
+
+@teacher_bp.route('/materials/delete/<int:material_id>', methods=['POST'])
+@login_required
+@role_required('Teacher')
+def delete_material(material_id):
+    """Delete a course material."""
+    teacher_id = session['user_id']
+
+    material = query_db(
+        "SELECT file_path FROM course_materials WHERE material_id = %s AND teacher_id = %s",
+        (material_id, teacher_id), one=True
+    )
+    if not material:
+        flash("Material not found or access denied.", "error")
+        return redirect(url_for('.course_materials'))
+
+    try:
+        # Delete file from disk
+        if material['file_path'] and os.path.exists(material['file_path']):
+            os.remove(material['file_path'])
+
+        execute_db("DELETE FROM course_materials WHERE material_id = %s", (material_id,))
+        flash("Material deleted successfully.", "success")
+    except Exception as e:
+        flash(f"Error deleting material: {e}", "error")
+        current_app.logger.error(f"Error deleting material {material_id}: {e}", exc_info=True)
+
+    return redirect(url_for('.course_materials'))
+
+
+@teacher_bp.route('/materials/download/<int:material_id>')
+@login_required
+@role_required('Teacher')
+def download_material(material_id):
+    """Download a course material file."""
+    teacher_id = session['user_id']
+
+    material = query_db(
+        "SELECT file_path, file_name FROM course_materials WHERE material_id = %s AND teacher_id = %s",
+        (material_id, teacher_id), one=True
+    )
+    if not material or not os.path.exists(material['file_path']):
+        flash("File not found.", "error")
+        return redirect(url_for('.course_materials'))
+
+    return send_file(material['file_path'], as_attachment=True, download_name=material['file_name'])

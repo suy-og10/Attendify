@@ -2,65 +2,197 @@
 {% block title %}Student Dashboard — Attendify{% endblock %}
 
 {% block content %}
-<div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold text-gray-900">Welcome, {{ student.student_name }}!</h1>
-    <div
-        class="text-sm font-semibold text-gray-500 bg-gray-100 px-3 py-1 rounded-full border border-gray-200 shadow-sm">
-        {{ student.division }} • {{ student.academic_year }}
+<!-- Welcome Header -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+    <div>
+        <h1 class="text-2xl font-black text-gray-900 flex items-center gap-2">
+            Welcome, {{ student.student_name }}!
+        </h1>
+        <div class="flex items-center gap-2 mt-2">
+            <span class="text-xs font-semibold text-gray-600 bg-gray-100 px-3 py-1 rounded-full border border-gray-200">
+                <i class="fa-solid fa-graduation-cap mr-1"></i> {{ student.division }} • {{ student.academic_year }}
+            </span>
+            {% if embedding_count > 0 %}
+            <span class="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                Face ID Active ({{ embedding_count }})
+            </span>
+            {% else %}
+            <span class="text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 px-3 py-1 rounded-full flex items-center gap-1.5">
+                <i class="fa-solid fa-circle-exclamation text-rose-500"></i>
+                Face ID Pending
+            </span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="text-right hidden sm:block">
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Viewing Schedule For</p>
+        <p class="text-sm font-semibold text-gray-700">{{ selected_date }}</p>
     </div>
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-    {% for stat in attendance_stats %}
-    <div
-        class="section-card p-6 rounded-xl border border-gray-100 shadow-md border-t-4 hover:shadow-lg transition-all border-t-indigo-500 hover:-translate-y-1">
-        <div class="flex justify-between items-start mb-4">
-            <div>
-                <h3 class="text-lg font-bold text-gray-900 line-clamp-1" title="{{ stat.subject_name }}">{{
-                    stat.subject_name }}</h3>
-                <p class="text-sm text-gray-500">{{ stat.subject_code }} • {{ stat.teacher_name }}</p>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Main Content Column -->
+    <div class="lg:col-span-2 space-y-8">
+        
+        <!-- Attendance Overview -->
+        <div>
+            <h2 class="text-base font-black text-gray-900 mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-chart-pie text-indigo-500"></i> My Attendance
+            </h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {% for stat in attendance_stats %}
+                <div class="section-card p-5 rounded-2xl border-t-4 transition-all card-hover {% if stat.attendance_percentage < 75 %}border-t-rose-500 bg-rose-50/10{% else %}border-t-indigo-500{% endif %}">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <h3 class="font-bold text-gray-900 text-sm line-clamp-1" title="{{ stat.subject_name }}">{{ stat.subject_name }}</h3>
+                            <p class="text-[10px] font-bold text-indigo-500 bg-indigo-50 inline-block px-1.5 py-0.5 rounded mt-1 border border-indigo-100">{{ stat.subject_code }}</p>
+                        </div>
+                        <a href="{{ url_for('student.view_details', subject_id=stat.subject_id) }}" class="flex-shrink-0 text-indigo-600 hover:text-indigo-800 text-[10px] font-bold bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded-lg transition-colors ml-2">
+                            Details <i class="fa-solid fa-arrow-right ml-0.5"></i>
+                        </a>
+                    </div>
+
+                    {% if stat.attendance_percentage < 75 %}
+                    <div class="mb-3 text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-1 rounded border border-rose-100 flex items-center gap-1.5">
+                        <i class="fa-solid fa-triangle-exclamation"></i> Low attendance warning
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <div class="flex justify-between items-end mb-1.5">
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Attendance</span>
+                            <span class="text-lg font-black leading-none {% if stat.attendance_percentage >= 75 %}text-emerald-600{% elif stat.attendance_percentage >= 50 %}text-amber-500{% else %}text-rose-600{% endif %}">
+                                {{ stat.attendance_percentage }}%
+                            </span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                            <div class="h-2 rounded-full transition-all duration-1000 {% if stat.attendance_percentage >= 75 %}bg-gradient-to-r from-emerald-400 to-emerald-500{% elif stat.attendance_percentage >= 50 %}bg-gradient-to-r from-amber-400 to-amber-500{% else %}bg-gradient-to-r from-rose-400 to-rose-500{% endif %}"
+                                style="width: {{ stat.attendance_percentage }}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between text-[10px] text-gray-500 font-medium">
+                        <span><i class="fa-solid fa-circle text-emerald-400 text-[8px] mr-1"></i>Present: <span class="text-gray-900 font-bold">{{ stat.present_count }}</span></span>
+                        <span>Total: <span class="text-gray-900 font-bold">{{ stat.total_sessions }}</span></span>
+                    </div>
+                </div>
+                {% else %}
+                <div class="col-span-1 sm:col-span-2 text-center p-8 bg-gray-50 border border-gray-100 rounded-2xl">
+                    <div class="w-12 h-12 bg-white text-gray-300 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm">
+                        <i class="fa-solid fa-book-open text-xl"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-gray-700">No Subjects Found</h3>
+                    <p class="text-gray-400 text-xs mt-1">You are not enrolled in any subjects yet.</p>
+                </div>
+                {% endfor %}
             </div>
-            <a href="{{ url_for('student.view_details', subject_id=stat.subject_id) }}"
-                class="flex-shrink-0 text-indigo-600 hover:text-indigo-800 text-sm font-semibold rounded-lg hover:bg-indigo-50 p-2 transition-colors ml-2">
-                Details <i class="fa-solid fa-arrow-right text-xs"></i>
-            </a>
         </div>
 
-        <div class="mb-5 bg-gray-50 p-3 rounded-lg border border-gray-100">
-            <div class="flex justify-between items-center mb-2">
-                <span class="text-xs font-bold text-gray-600 uppercase tracking-wide">Attendance</span>
-                <span
-                    class="text-base font-extrabold {% if stat.attendance_percentage >= 75 %}text-emerald-600{% elif stat.attendance_percentage >= 50 %}text-amber-500{% else %}text-rose-600{% endif %}">
-                    {{ stat.attendance_percentage }}%
-                </span>
+        <!-- Recent Materials -->
+        <div>
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-base font-black text-gray-900 flex items-center gap-2">
+                    <i class="fa-solid fa-cloud-arrow-down text-indigo-500"></i> Recent Materials
+                </h2>
+                <a href="{{ url_for('student.course_materials') }}" class="text-xs font-bold text-indigo-600 hover:text-indigo-800">View All</a>
             </div>
-            <div class="w-full bg-gray-200/80 rounded-full h-2.5 overflow-hidden shadow-inner">
-                <div class="h-2.5 rounded-full transition-all duration-1000 {% if stat.attendance_percentage >= 75 %}bg-gradient-to-r from-emerald-400 to-emerald-500{% elif stat.attendance_percentage >= 50 %}bg-gradient-to-r from-amber-400 to-amber-500{% else %}bg-gradient-to-r from-rose-400 to-rose-500{% endif %}"
-                    style="width: {{ stat.attendance_percentage }}%"></div>
-            </div>
-        </div>
-
-        <div class="flex justify-between text-sm text-gray-600 font-medium">
-            <div class="flex items-center gap-2">
-                <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
-                <span>Present: <span class="text-gray-900 font-bold ml-1">{{ stat.present_count }}</span></span>
-            </div>
-            <div class="flex items-center gap-2">
-                <div class="w-2 h-2 rounded-full bg-gray-400"></div>
-                <span>Total: <span class="text-gray-900 font-bold ml-1">{{ stat.total_sessions }}</span></span>
+            
+            <div class="section-card overflow-hidden">
+                {% if recent_materials %}
+                <div class="divide-y divide-gray-50">
+                    {% for mat in recent_materials %}
+                    {% set ext = mat.file_name.rsplit('.', 1)[1].lower() if '.' in mat.file_name else '' %}
+                    {% set icon = 'fa-file-pdf text-rose-500' if ext == 'pdf' else ('fa-file-word text-blue-500' if ext in ('doc','docx') else ('fa-file-powerpoint text-orange-500' if ext in ('ppt','pptx') else ('fa-file-excel text-emerald-500' if ext in ('xls','xlsx') else ('fa-file-image text-purple-500' if ext in ('png','jpg','jpeg') else 'fa-file-lines text-gray-500')))) %}
+                    <div class="p-4 flex items-center justify-between gap-4 hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 border border-gray-100 shadow-sm">
+                                <i class="fa-solid {{ icon }} text-lg"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-gray-900 truncate max-w-[200px] sm:max-w-[300px]">{{ mat.title }}</p>
+                                <div class="flex items-center gap-2 mt-0.5">
+                                    <span class="text-[9px] font-bold text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded">{{ mat.subject_code }}</span>
+                                    <span class="text-[10px] text-gray-400">{{ mat.created_at.strftime('%b %d') if mat.created_at.strftime else mat.created_at }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <a href="{{ url_for('student.download_material', material_id=mat.material_id) }}" class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white flex items-center justify-center transition-colors flex-shrink-0">
+                            <i class="fa-solid fa-download text-xs"></i>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="p-8 text-center">
+                    <p class="text-gray-400 text-xs">No materials published recently.</p>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
-    {% else %}
-    <div
-        class="col-span-1 md:col-span-2 lg:col-span-3 text-center p-12 bg-gray-50/80 border border-gray-100 rounded-2xl shadow-sm">
-        <div class="w-16 h-16 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-4">
-            <i class="fa-solid fa-book-open text-2xl"></i>
+
+    <!-- Sidebar Column -->
+    <div>
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-base font-black text-gray-900 flex items-center gap-2">
+                <i class="fa-solid fa-calendar-day text-indigo-500"></i> Schedule
+            </h2>
+            <input type="date" id="scheduleDate" value="{{ selected_date }}" 
+                onchange="window.location.href='?date=' + this.value"
+                class="text-xs font-bold bg-white border border-gray-200 text-gray-700 rounded-lg px-2 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm cursor-pointer">
         </div>
-        <h3 class="text-lg font-bold text-gray-800 mb-1">No Subjects Found</h3>
-        <p class="text-gray-500 text-sm max-w-md mx-auto">You don't have any subjects or schedules assigned to your
-            division and academic year yet.</p>
+        
+        <div class="section-card p-5">
+            {% if todays_classes %}
+            <div class="relative">
+                <div class="absolute left-3 top-2 bottom-2 w-0.5 bg-gray-100"></div>
+                <div class="space-y-6 relative">
+                    {% for cls in todays_classes %}
+                    <div class="flex gap-4">
+                        <div class="w-6 h-6 rounded-full bg-white border-2 {% if cls.status == 'COMPLETED' %}border-emerald-500{% elif cls.status == 'ONGOING' %}border-amber-500{% else %}border-indigo-400{% endif %} flex-shrink-0 flex items-center justify-center z-10 mt-1 shadow-sm">
+                            {% if cls.status == 'COMPLETED' %}
+                            <i class="fa-solid fa-check text-[10px] text-emerald-500"></i>
+                            {% elif cls.status == 'ONGOING' %}
+                            <div class="w-1.5 h-1.5 rounded-full bg-amber-500 pulse-dot"></div>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-bold text-gray-500 mb-0.5">{{ cls.start_time }} – {{ cls.end_time }}</p>
+                            <p class="text-sm font-bold text-gray-900">{{ cls.subject_name }}</p>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="text-[9px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">{{ cls.subject_code }}</span>
+                                <span class="text-[10px] text-gray-400"><i class="fa-solid fa-user-tie mr-1"></i>{{ cls.teacher_name }}</span>
+                            </div>
+                            
+                            {% if cls.status == 'ONGOING' %}
+                            <span class="inline-block mt-2 text-[9px] font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded uppercase border border-amber-200">Happening Now</span>
+                            {% elif cls.status == 'COMPLETED' %}
+                                {% if cls.attendance_status == 'Present' %}
+                                <span class="inline-block mt-2 text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200"><i class="fa-solid fa-check mr-1"></i> Present</span>
+                                {% elif cls.attendance_status == 'Absent' %}
+                                <span class="inline-block mt-2 text-[9px] font-black text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200"><i class="fa-solid fa-xmark mr-1"></i> Absent</span>
+                                {% elif cls.attendance_status == 'Late' %}
+                                <span class="inline-block mt-2 text-[9px] font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200"><i class="fa-solid fa-clock mr-1"></i> Late</span>
+                                {% else %}
+                                <span class="inline-block mt-2 text-[9px] font-black text-gray-500 bg-gray-100 px-2 py-0.5 rounded border border-gray-200">Completed</span>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center py-6">
+                <div class="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <i class="fa-solid fa-mug-hot text-gray-300"></i>
+                </div>
+                <p class="text-sm font-bold text-gray-700">No classes scheduled.</p>
+                <p class="text-xs text-gray-400">Enjoy your free time.</p>
+            </div>
+            {% endif %}
+        </div>
     </div>
-    {% endfor %}
 </div>
 {% endblock %}

@@ -1,0 +1,92 @@
+{% extends "layout.html" %}
+{% block title %}Upload Material — Attendify{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-black text-gray-900 flex items-center gap-2">
+            <i class="fa-solid fa-cloud-arrow-up text-indigo-500"></i> Upload Material
+        </h1>
+        <p class="text-sm text-gray-500 mt-0.5">Share study resources with your students</p>
+    </div>
+    <a href="{{ url_for('teacher.course_materials') }}" class="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold py-2 px-4 rounded-xl transition-all">
+        <i class="fa-solid fa-arrow-left"></i> Back
+    </a>
+</div>
+
+<div class="section-card p-6 max-w-2xl">
+    <form method="POST" enctype="multipart/form-data" class="space-y-5">
+        <!-- Subject -->
+        <div>
+            <label class="text-xs font-bold text-gray-600 uppercase tracking-wider block mb-1.5">Subject *</label>
+            <select name="subject_id" required class="w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                <option value="">— Select Subject —</option>
+                {% for s in subjects %}
+                <option value="{{ s.subject_id }}" {{ 'selected' if form_data.get('subject_id') == s.subject_id|string }}>{{ s.subject_code }} — {{ s.subject_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Title -->
+        <div>
+            <label class="text-xs font-bold text-gray-600 uppercase tracking-wider block mb-1.5">Title *</label>
+            <input type="text" name="title" value="{{ form_data.get('title', '') }}" required placeholder="e.g. Chapter 3 — Data Structures Notes"
+                class="w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+        </div>
+
+        <!-- Description -->
+        <div>
+            <label class="text-xs font-bold text-gray-600 uppercase tracking-wider block mb-1.5">Description</label>
+            <textarea name="description" rows="3" placeholder="Brief description of the material..."
+                class="w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none">{{ form_data.get('description', '') }}</textarea>
+        </div>
+
+        <!-- File Upload -->
+        <div>
+            <label class="text-xs font-bold text-gray-600 uppercase tracking-wider block mb-1.5">File * <span class="text-gray-400 font-normal normal-case">(Max 16MB — PDF, DOC, PPT, XLS, TXT, Images)</span></label>
+            <div class="relative">
+                <input type="file" name="material_file" required id="fileInput"
+                    accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.png,.jpg,.jpeg,.txt"
+                    class="w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100 cursor-pointer border border-gray-200 rounded-lg bg-gray-50">
+            </div>
+            <p id="fileInfo" class="text-[10px] text-gray-400 mt-1 hidden"></p>
+        </div>
+
+        <!-- Publish Toggle -->
+        <div class="flex items-center gap-3">
+            <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" name="is_published" class="sr-only peer" checked>
+                <div class="w-9 h-5 bg-gray-200 peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+            </label>
+            <span class="text-sm font-medium text-gray-700">Publish immediately</span>
+        </div>
+
+        <!-- Submit -->
+        <div class="pt-2">
+            <button type="submit" class="btn-primary w-full text-center">
+                <i class="fa-solid fa-cloud-arrow-up mr-2"></i> Upload Material
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.getElementById('fileInput').addEventListener('change', function() {
+    const info = document.getElementById('fileInfo');
+    if (this.files.length > 0) {
+        const f = this.files[0];
+        const sizeMB = (f.size / (1024*1024)).toFixed(2);
+        info.textContent = `${f.name} — ${sizeMB} MB`;
+        info.classList.remove('hidden');
+        if (f.size > 16*1024*1024) {
+            info.classList.add('text-rose-500');
+            info.textContent += ' ⚠ Exceeds 16MB limit';
+        } else {
+            info.classList.remove('text-rose-500');
+        }
+    } else {
+        info.classList.add('hidden');
+    }
+});
+</script>
+{% endblock %}

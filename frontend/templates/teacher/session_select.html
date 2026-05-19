@@ -99,11 +99,24 @@
                 <i class="fa-solid fa-history text-white text-base"></i>
             </div>
             <div>
-                <h2 class="text-base font-bold text-gray-900">All Available Sessions</h2>
-                <p class="text-xs text-gray-500">History of all classes in your timetable</p>
+                <h2 class="text-base font-bold text-gray-900">Deployment History</h2>
+                <p class="text-xs text-gray-500">Past and upcoming sessions</p>
             </div>
         </div>
-        <div class="relative w-64">
+        <div class="flex items-center gap-2">
+            <label for="historyDate" class="text-xs font-bold text-gray-500 uppercase tracking-wider hidden sm:block">Filter Date</label>
+            <input type="date" id="historyDate" value="{{ selected_date or '' }}" 
+                onchange="window.location.href='?date=' + this.value"
+                class="text-sm font-bold bg-gray-50 border border-gray-200 text-gray-700 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm cursor-pointer">
+            {% if selected_date %}
+            <a href="?" class="w-9 h-9 flex items-center justify-center rounded-lg bg-rose-50 text-rose-500 hover:bg-rose-100 transition-colors" title="Clear Filter">
+                <i class="fa-solid fa-xmark"></i>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="px-6 py-4">
+        <div class="relative w-full max-w-sm">
             <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
             <input type="text" id="sessionSearch" placeholder="Filter by date, subject..."
                 class="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
@@ -141,11 +154,24 @@
                     class="inline-flex items-center gap-2 bg-amber-500 text-white hover:bg-amber-600 text-[10px] font-black px-3 py-1.5 rounded-lg transition-all shadow-sm">
                     <i class="fa-solid fa-play"></i> RESUME
                 </a>
-                {% else %}
-                <a href="{{ url_for('teacher.take_attendance_page', session_id=session.session_id) }}"
-                    class="inline-flex items-center gap-2 bg-indigo-600 text-white hover:bg-indigo-700 text-[10px] font-black px-3 py-1.5 rounded-lg transition-all shadow-sm">
-                    <i class="fa-solid fa-play"></i> START
-                </a>
+                {% elif session.status == 'CANCELLED' %}
+                <span class="inline-flex items-center gap-1 text-[10px] font-black text-gray-400 bg-gray-100 px-3 py-1.5 rounded-lg">
+                    <i class="fa-solid fa-ban"></i> CANCELLED
+                </span>
+                {% elif session.status == 'SCHEDULED' %}
+                    {% if session.session_date | string > today_date %}
+                    <span class="inline-flex items-center gap-1 text-[10px] font-black text-indigo-500 bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-200">
+                        <i class="fa-solid fa-calendar-check"></i> UPCOMING
+                    </span>
+                    {% elif session.session_date | string == today_date %}
+                    <span class="inline-flex items-center gap-1 text-[10px] font-black text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
+                        <i class="fa-solid fa-clock"></i> TODAY
+                    </span>
+                    {% else %}
+                    <span class="inline-flex items-center gap-1 text-[10px] font-black text-gray-400 bg-gray-100 px-3 py-1.5 rounded-lg border border-gray-200">
+                        <i class="fa-solid fa-clock-rotate-left"></i> ENDED — No Attendance
+                    </span>
+                    {% endif %}
                 {% endif %}
             </div>
         </div>
