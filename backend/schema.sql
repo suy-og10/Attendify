@@ -150,6 +150,23 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 CREATE INDEX IF NOT EXISTS idx_audit_actor_time ON audit_logs(actor_user_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_logs(entity_type, entity_id);
 
+-- 11. Attendance Correction Requests Table
+CREATE TABLE IF NOT EXISTS attendance_correction_requests (
+    request_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    attendance_id INTEGER NOT NULL,
+    requested_status TEXT NOT NULL CHECK(requested_status IN ('Present', 'Absent', 'Late')),
+    reason TEXT NOT NULL,
+    requested_by INTEGER NOT NULL,
+    reviewed_by INTEGER,
+    status TEXT DEFAULT 'PENDING' CHECK(status IN ('PENDING', 'APPROVED', 'REJECTED')),
+    reviewed_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (attendance_id) REFERENCES attendance_records(attendance_id),
+    FOREIGN KEY (requested_by) REFERENCES users(user_id),
+    FOREIGN KEY (reviewed_by) REFERENCES users(user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_correction_status ON attendance_correction_requests(status, created_at);
+
 -- Add triggers for updated_at if needed in SQLite
 CREATE TRIGGER IF NOT EXISTS update_student_timestamp AFTER UPDATE ON students FOR EACH ROW BEGIN
     UPDATE students SET updated_at = CURRENT_TIMESTAMP WHERE student_id = OLD.student_id;

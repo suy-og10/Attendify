@@ -1,0 +1,73 @@
+{% extends "layout.html" %}
+{% block title %}Attendance Corrections - Attendify{% endblock %}
+
+{% block content %}
+<div class="animated-gradient rounded-2xl p-7 mb-7 shadow-xl">
+    <h1 class="text-2xl font-black text-white">Attendance Corrections</h1>
+    <p class="text-purple-200 text-sm mt-0.5">Request and approve audited corrections for department records</p>
+</div>
+
+<div class="section-card p-6 mb-6">
+    <h2 class="text-base font-bold text-gray-900 mb-4">Create Correction Request</h2>
+    <form method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+        <select name="attendance_id" class="input-field !pl-3" required>
+            <option value="">Select record</option>
+            {% for record in records %}
+            <option value="{{ record.attendance_id }}">{{ record.session_date }} - {{ record.student_name }} ({{ record.prn }}) - {{ record.subject_code }} - {{ record.status }}</option>
+            {% endfor %}
+        </select>
+        <select name="requested_status" class="input-field !pl-3" required>
+            <option value="Present">Present</option>
+            <option value="Absent">Absent</option>
+            <option value="Late">Late</option>
+        </select>
+        <input name="reason" class="input-field !pl-3" placeholder="Correction reason" required>
+        <button class="btn-primary">Request</button>
+    </form>
+</div>
+
+<div class="section-card p-6">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="border-b border-gray-100 text-gray-500 text-sm">
+                    <th class="py-3 px-4 font-semibold">Record</th>
+                    <th class="py-3 px-4 font-semibold">Change</th>
+                    <th class="py-3 px-4 font-semibold">Reason</th>
+                    <th class="py-3 px-4 font-semibold">Status</th>
+                    <th class="py-3 px-4 font-semibold">Review</th>
+                </tr>
+            </thead>
+            <tbody class="text-sm">
+                {% for req in requests %}
+                <tr class="border-b border-gray-50 align-top">
+                    <td class="py-3 px-4">
+                        <p class="font-semibold text-gray-900">{{ req.student_name }} / {{ req.prn }}</p>
+                        <p class="text-xs text-gray-500">{{ req.session_date }} - {{ req.subject_code }} {{ req.subject_name }}</p>
+                    </td>
+                    <td class="py-3 px-4 text-gray-700">{{ req.current_status }} -> {{ req.requested_status }}</td>
+                    <td class="py-3 px-4 text-gray-600">{{ req.reason }}</td>
+                    <td class="py-3 px-4"><span class="badge-info">{{ req.status }}</span></td>
+                    <td class="py-3 px-4">
+                        {% if req.status == 'PENDING' %}
+                        <div class="flex gap-2">
+                            <form method="POST" action="{{ url_for('hod.review_attendance_correction', request_id=req.request_id, action='approve') }}">
+                                <button class="text-emerald-600 font-semibold text-xs">Approve</button>
+                            </form>
+                            <form method="POST" action="{{ url_for('hod.review_attendance_correction', request_id=req.request_id, action='reject') }}">
+                                <button class="text-rose-600 font-semibold text-xs">Reject</button>
+                            </form>
+                        </div>
+                        {% else %}
+                        <span class="text-xs text-gray-500">{{ req.reviewed_by_name or 'Reviewed' }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="py-8 text-center text-gray-500">No correction requests found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

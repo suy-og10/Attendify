@@ -1,0 +1,38 @@
+{% extends "layout.html" %}
+{% block title %}ERP Audit Logs - Attendify{% endblock %}
+
+{% block content %}
+<div class="animated-gradient rounded-2xl p-7 mb-7 shadow-xl">
+    <h1 class="text-2xl font-black text-white">ERP Coordinator Audit Logs</h1>
+    <p class="text-purple-200 text-sm mt-0.5">Trace student, schedule, and attendance correction actions</p>
+</div>
+
+<div class="section-card p-6">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="border-b border-gray-100 text-gray-500 text-sm">
+                    <th class="py-3 px-4 font-semibold">Time</th>
+                    <th class="py-3 px-4 font-semibold">Actor</th>
+                    <th class="py-3 px-4 font-semibold">Action</th>
+                    <th class="py-3 px-4 font-semibold">Entity</th>
+                    <th class="py-3 px-4 font-semibold">Details</th>
+                </tr>
+            </thead>
+            <tbody class="text-sm">
+                {% for log in logs %}
+                <tr class="border-b border-gray-50">
+                    <td class="py-3 px-4 text-gray-500">{{ log.created_at }}</td>
+                    <td class="py-3 px-4 text-gray-700">{{ log.actor_name or 'System' }}</td>
+                    <td class="py-3 px-4 font-semibold text-gray-900">{{ log.action }}</td>
+                    <td class="py-3 px-4 text-gray-600">{{ log.entity_type or '-' }} {{ log.entity_id or '' }}</td>
+                    <td class="py-3 px-4 text-gray-600">{{ log.details or '-' }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="py-8 text-center text-gray-500">No audit logs found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
