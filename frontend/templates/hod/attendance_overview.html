@@ -1,0 +1,47 @@
+{% extends "layout.html" %}
+{% block title %}Attendance Overview - Attendify{% endblock %}
+
+{% block content %}
+<div class="animated-gradient rounded-2xl p-7 mb-7 shadow-xl">
+    <h1 class="text-2xl font-black text-white">Department Attendance Overview</h1>
+    <p class="text-purple-200 text-sm mt-0.5">Monitor conducted, ongoing, and pending attendance sessions</p>
+</div>
+
+<div class="section-card p-6">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="border-b border-gray-100 text-gray-500 text-sm">
+                    <th class="py-3 px-4 font-semibold">Date</th>
+                    <th class="py-3 px-4 font-semibold">Class</th>
+                    <th class="py-3 px-4 font-semibold">Teacher</th>
+                    <th class="py-3 px-4 font-semibold">Status</th>
+                    <th class="py-3 px-4 font-semibold">Marked</th>
+                </tr>
+            </thead>
+            <tbody class="text-sm">
+                {% for row in summary %}
+                {% set marked = (row.present_count or 0) + (row.late_count or 0) + (row.absent_count or 0) %}
+                <tr class="border-b border-gray-50">
+                    <td class="py-3 px-4 text-gray-600">{{ row.session_date }}</td>
+                    <td class="py-3 px-4">
+                        <p class="font-semibold text-gray-900">{{ row.subject_code }} - {{ row.subject_name }}</p>
+                        <p class="text-xs text-gray-500">{{ row.division }} / {{ row.academic_year }}</p>
+                    </td>
+                    <td class="py-3 px-4 text-gray-600">{{ row.teacher_name }}</td>
+                    <td class="py-3 px-4"><span class="badge-info">{{ row.status }}</span></td>
+                    <td class="py-3 px-4 text-gray-700">
+                        {{ marked }}/{{ row.total_students or 0 }}
+                        <span class="text-xs text-emerald-600 ml-2">P {{ row.present_count or 0 }}</span>
+                        <span class="text-xs text-amber-600 ml-2">L {{ row.late_count or 0 }}</span>
+                        <span class="text-xs text-rose-600 ml-2">A {{ row.absent_count or 0 }}</span>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="py-8 text-center text-gray-500">No sessions found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

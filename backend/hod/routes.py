@@ -8,9 +8,68 @@ from backend.teacher.reporting_logic import generate_attendance_excel
 import datetime
 
 hod_bp = Blueprint('hod', __name__, template_folder='../../frontend/templates/hod', url_prefix='/hod')
-# In: backend/hod/routes.py
 
-# In: backend/hod/routes.py
+
+def _hod_dept_id():
+    return session.get('dept_id') or (g.user.get('dept_id') if g.user else None)
+
+
+def _log_hod_action(action, entity_type=None, entity_id=None, details=None):
+    try:
+        execute_db(
+            """
+            INSERT INTO audit_logs (actor_user_id, action, entity_type, entity_id, details)
+            VALUES (%s, %s, %s, %s, %s)
+            """,
+            (session.get('user_id'), action, entity_type, str(entity_id) if entity_id is not None else None, details),
+        )
+    except Exception as exc:
+        current_app.logger.warning("HOD audit logging failed for %s: %s", action, exc)
+
+
+def _schedule_conflicts(teacher_id, day_of_week, start_time, end_time, classroom=None, exclude_schedule_id=None):
+    params = [teacher_id, day_of_week, start_time, end_time]
+    exclude_sql = ""
+    if exclude_schedule_id:
+        exclude_sql = "AND cs.schedule_id != %s"
+        params.append(exclude_schedule_id)
+
+    teacher_conflicts = query_db(
+        f"""
+        SELECT cs.schedule_id, s.subject_code, cs.division, cs.start_time, cs.end_time
+        FROM class_schedules cs
+        JOIN subjects s ON cs.subject_id = s.subject_id
+        WHERE cs.teacher_id = %s
+          AND cs.day_of_week = %s
+          AND cs.is_active = TRUE
+          AND (%s < cs.end_time AND %s > cs.start_time)
+          {exclude_sql}
+        """,
+        params,
+    ) or []
+
+    room_conflicts = []
+    if classroom:
+        room_params = [classroom, day_of_week, start_time, end_time]
+        room_exclude_sql = ""
+        if exclude_schedule_id:
+            room_exclude_sql = "AND cs.schedule_id != %s"
+            room_params.append(exclude_schedule_id)
+        room_conflicts = query_db(
+            f"""
+            SELECT cs.schedule_id, s.subject_code, cs.division, cs.start_time, cs.end_time
+            FROM class_schedules cs
+            JOIN subjects s ON cs.subject_id = s.subject_id
+            WHERE cs.classroom = %s
+              AND cs.day_of_week = %s
+              AND cs.is_active = TRUE
+              AND (%s < cs.end_time AND %s > cs.start_time)
+              {room_exclude_sql}
+            """,
+            room_params,
+        ) or []
+
+    return teacher_conflicts, room_conflicts
 
 @hod_bp.route('/dashboard')
 @login_required
@@ -172,6 +231,158 @@ def edit_teacher(teacher_id):
     return render_template('hod/edit_teacher.html', teacher=teacher)
 
 
+@hod_bp.route('/students')
+@login_required
+@role_required('HOD')
+def manage_students():
+    hod_dept_id = _hod_dept_id()
+    search = request.args.get('search', '').strip()
+    division = request.args.get('division', '').strip()
+    academic_year = request.args.get('academic_year', '').strip()
+
+    where = ["s.dept_id = %s"]
+    params = [hod_dept_id]
+    if search:
+        where.append("(s.student_name LIKE %s OR s.prn LIKE %s OR s.roll_no LIKE %s)")
+        q = f"%{search}%"
+        params.extend([q, q, q])
+    if division:
+        where.append("s.division = %s")
+        params.append(division)
+    if academic_year:
+        where.append("s.academic_year = %s")
+        params.append(academic_year)
+
+    students = query_db(
+        f"""
+        SELECT s.*, u.username, u.is_active AS account_active,
+               (SELECT COUNT(*) FROM face_embeddings fe WHERE fe.student_id = s.student_id AND fe.is_active = TRUE) AS embedding_count
+        FROM students s
+        LEFT JOIN users u ON s.user_id = u.user_id
+        WHERE {' AND '.join(where)}
+        ORDER BY s.academic_year DESC, s.division, s.roll_no, s.student_name
+        """,
+        params,
+    ) or []
+    divisions = query_db("SELECT DISTINCT division FROM students WHERE dept_id = %s ORDER BY division", (hod_dept_id,)) or []
+    years = query_db("SELECT DISTINCT academic_year FROM students WHERE dept_id = %s ORDER BY academic_year DESC", (hod_dept_id,)) or []
+    return render_template('hod/manage_students.html', students=students, divisions=divisions, years=years, filters={
+        'search': search, 'division': division, 'academic_year': academic_year
+    })
+
+
+@hod_bp.route('/students/add', methods=['GET', 'POST'])
+@login_required
+@role_required('HOD')
+def add_student():
+    hod_dept_id = _hod_dept_id()
+    if request.method == 'POST':
+        name = request.form.get('student_name', '').strip()
+        prn = request.form.get('prn', '').strip()
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '')
+        roll_no = request.form.get('roll_no', '').strip() or None
+        division = request.form.get('division', '').strip().upper()
+        academic_year = request.form.get('academic_year', '').strip()
+        email = request.form.get('email', '').strip().lower() or None
+        phone = request.form.get('phone', '').strip() or None
+
+        if not all([name, prn, username, password, division, academic_year]):
+            flash('Name, PRN, username, password, division, and academic year are required.', 'error')
+        else:
+            user_id = None
+            try:
+                user_id = execute_db(
+                    """
+                    INSERT INTO users (username, password_hash, full_name, email, role, dept_id, is_active)
+                    VALUES (%s, %s, %s, %s, 'Student', %s, TRUE)
+                    """,
+                    (username, generate_password_hash(password), name, email, hod_dept_id),
+                )
+                student_id = execute_db(
+                    """
+                    INSERT INTO students (prn, student_name, roll_no, division, dept_id, academic_year, email, phone, user_id, is_active)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE)
+                    """,
+                    (prn, name, roll_no, division, hod_dept_id, academic_year, email, phone, user_id),
+                )
+                _log_hod_action('CREATE_STUDENT', 'students', student_id, f"Created student {prn}")
+                flash('Student created successfully.', 'success')
+                return redirect(url_for('.manage_students'))
+            except Exception as e:
+                if user_id:
+                    try:
+                        execute_db("DELETE FROM users WHERE user_id = %s", (user_id,))
+                    except Exception:
+                        pass
+                flash(f'Error creating student: {e}', 'error')
+
+    return render_template('hod/student_form.html', student=None)
+
+
+@hod_bp.route('/students/<int:student_id>/edit', methods=['GET', 'POST'])
+@login_required
+@role_required('HOD')
+def edit_student(student_id):
+    hod_dept_id = _hod_dept_id()
+    student = query_db("SELECT * FROM students WHERE student_id = %s AND dept_id = %s", (student_id, hod_dept_id), one=True)
+    if not student:
+        flash('Student not found or access denied.', 'error')
+        return redirect(url_for('.manage_students'))
+
+    if request.method == 'POST':
+        name = request.form.get('student_name', '').strip()
+        prn = request.form.get('prn', '').strip()
+        roll_no = request.form.get('roll_no', '').strip() or None
+        division = request.form.get('division', '').strip().upper()
+        academic_year = request.form.get('academic_year', '').strip()
+        email = request.form.get('email', '').strip().lower() or None
+        phone = request.form.get('phone', '').strip() or None
+        is_active = request.form.get('is_active') == 'on'
+
+        if not all([name, prn, division, academic_year]):
+            flash('Name, PRN, division, and academic year are required.', 'error')
+        else:
+            try:
+                execute_db(
+                    """
+                    UPDATE students
+                    SET student_name = %s, prn = %s, roll_no = %s, division = %s, academic_year = %s,
+                        email = %s, phone = %s, is_active = %s
+                    WHERE student_id = %s AND dept_id = %s
+                    """,
+                    (name, prn, roll_no, division, academic_year, email, phone, is_active, student_id, hod_dept_id),
+                )
+                execute_db(
+                    "UPDATE users SET full_name = %s, email = %s, is_active = %s WHERE user_id = %s",
+                    (name, email, is_active, student['user_id']),
+                )
+                _log_hod_action('UPDATE_STUDENT', 'students', student_id, f"Updated student {prn}")
+                flash('Student updated successfully.', 'success')
+                return redirect(url_for('.manage_students'))
+            except Exception as e:
+                flash(f'Error updating student: {e}', 'error')
+
+    return render_template('hod/student_form.html', student=student)
+
+
+@hod_bp.route('/students/<int:student_id>/toggle', methods=['POST'])
+@login_required
+@role_required('HOD')
+def toggle_student(student_id):
+    hod_dept_id = _hod_dept_id()
+    student = query_db("SELECT student_id, prn, user_id, is_active FROM students WHERE student_id = %s AND dept_id = %s", (student_id, hod_dept_id), one=True)
+    if not student:
+        flash('Student not found or access denied.', 'error')
+    else:
+        new_status = not bool(student['is_active'])
+        execute_db("UPDATE students SET is_active = %s WHERE student_id = %s", (new_status, student_id))
+        execute_db("UPDATE users SET is_active = %s WHERE user_id = %s", (new_status, student['user_id']))
+        _log_hod_action('TOGGLE_STUDENT_STATUS', 'students', student_id, f"{student['prn']} active={new_status}")
+        flash('Student status updated.', 'success')
+    return redirect(url_for('.manage_students'))
+
+
 
 @hod_bp.route('/subjects')
 @login_required
@@ -328,11 +539,22 @@ def add_schedule():
                     
                     if not s_time or not e_time:
                         continue 
+                    if s_time >= e_time:
+                        raise ValueError(f"Start time must be before end time for {days[day_idx]}.")
+
+                    teacher_conflicts, room_conflicts = _schedule_conflicts(
+                        teacher_id, day_idx, s_time, e_time, classroom=classroom
+                    )
+                    if teacher_conflicts:
+                        raise ValueError(f"Teacher is already booked on {days[day_idx]} during {s_time}-{e_time}.")
+                    if room_conflicts:
+                        raise ValueError(f"Classroom {classroom} is already booked on {days[day_idx]} during {s_time}-{e_time}.")
                         
                     schedule_id = execute_db("""
                         INSERT INTO class_schedules (subject_id, teacher_id, division, day_of_week, start_time, end_time, academic_year, classroom, is_active)
                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """, (subject_id, teacher_id, division, day_idx, s_time, e_time, academic_year, classroom, True))
+                    _log_hod_action('CREATE_SCHEDULE', 'class_schedules', schedule_id, f"Created schedule for division {division}")
                     
                     created_schedules.append({
                         'id': schedule_id,
@@ -445,6 +667,14 @@ def edit_schedule(schedule_id):
             error = "All fields except Classroom are required."
         elif start_time >= end_time:
              error = "Start time must be before end time."
+        else:
+            teacher_conflicts, room_conflicts = _schedule_conflicts(
+                teacher_id, day_of_week, start_time, end_time, classroom=classroom, exclude_schedule_id=schedule_id
+            )
+            if teacher_conflicts:
+                error = "Teacher is already booked during this time slot."
+            elif room_conflicts:
+                error = f"Classroom {classroom} is already booked during this time slot."
 
         if error is None:
             try:
@@ -454,6 +684,7 @@ def edit_schedule(schedule_id):
                         start_time = %s, end_time = %s, academic_year = %s, classroom = %s, is_active = %s
                     WHERE schedule_id = %s
                 """, (subject_id, teacher_id, division, day_of_week, start_time, end_time, academic_year, classroom, is_active, schedule_id))
+                _log_hod_action('UPDATE_SCHEDULE', 'class_schedules', schedule_id, f"Updated schedule for division {division}")
                 flash("Class schedule updated successfully.", "success")
                 return redirect(url_for('.manage_schedules'))
             except Exception as e:
@@ -552,4 +783,238 @@ def department_report():
         academic_years=academic_years,
         teachers=teachers
     )
-
+
+
+@hod_bp.route('/attendance/overview')
+@login_required
+@role_required('HOD')
+def attendance_overview():
+    hod_dept_id = _hod_dept_id()
+    summary = query_db(
+        """
+        SELECT csess.session_id, csess.session_date, csess.status,
+               sub.subject_code, sub.subject_name, u.full_name AS teacher_name,
+               sch.division, sch.academic_year,
+               COUNT(DISTINCT st.student_id) AS total_students,
+               SUM(CASE WHEN ar.status = 'Present' THEN 1 ELSE 0 END) AS present_count,
+               SUM(CASE WHEN ar.status = 'Late' THEN 1 ELSE 0 END) AS late_count,
+               SUM(CASE WHEN ar.status = 'Absent' THEN 1 ELSE 0 END) AS absent_count
+        FROM class_sessions csess
+        JOIN class_schedules sch ON csess.schedule_id = sch.schedule_id
+        JOIN subjects sub ON sch.subject_id = sub.subject_id
+        JOIN users u ON sch.teacher_id = u.user_id
+        LEFT JOIN students st
+          ON st.dept_id = sub.dept_id
+         AND st.division = sch.division
+         AND st.academic_year = sch.academic_year
+         AND st.is_active = TRUE
+        LEFT JOIN attendance_records ar
+          ON ar.session_id = csess.session_id
+         AND ar.student_id = st.student_id
+        WHERE sub.dept_id = %s
+        GROUP BY csess.session_id
+        ORDER BY csess.session_date DESC
+        LIMIT 200
+        """,
+        (hod_dept_id,),
+    ) or []
+    return render_template('hod/attendance_overview.html', summary=summary)
+
+
+@hod_bp.route('/reports/low-attendance')
+@login_required
+@role_required('HOD')
+def low_attendance_report():
+    hod_dept_id = _hod_dept_id()
+    threshold = request.args.get('threshold', default=75, type=int)
+    rows = query_db(
+        """
+        SELECT st.student_id, st.student_name, st.prn, st.division, st.academic_year,
+               sub.subject_code, sub.subject_name,
+               COUNT(DISTINCT csess.session_id) AS total_sessions,
+               SUM(CASE WHEN ar.status = 'Present' THEN 1 ELSE 0 END) AS present_count
+        FROM students st
+        JOIN subjects sub
+          ON sub.dept_id = st.dept_id
+        JOIN class_schedules sch
+          ON sch.subject_id = sub.subject_id
+         AND sch.division = st.division
+         AND sch.academic_year = st.academic_year
+        JOIN class_sessions csess
+          ON csess.schedule_id = sch.schedule_id
+         AND csess.status = 'COMPLETED'
+        LEFT JOIN attendance_records ar
+          ON ar.session_id = csess.session_id
+         AND ar.student_id = st.student_id
+        WHERE st.dept_id = %s
+          AND st.division = sch.division
+          AND st.academic_year = sch.academic_year
+          AND st.is_active = TRUE
+        GROUP BY st.student_id, sub.subject_id
+        HAVING total_sessions > 0
+           AND ((present_count / total_sessions) * 100) < %s
+        ORDER BY st.division, st.student_name, sub.subject_code
+        """,
+        (hod_dept_id, threshold),
+    ) or []
+    for row in rows:
+        total = row['total_sessions'] or 0
+        present = row['present_count'] or 0
+        row['attendance_percentage'] = round((present / total) * 100, 2) if total else 0
+    return render_template('hod/low_attendance.html', rows=rows, threshold=threshold)
+
+
+@hod_bp.route('/attendance/corrections', methods=['GET', 'POST'])
+@login_required
+@role_required('HOD')
+def attendance_corrections():
+    hod_dept_id = _hod_dept_id()
+    if request.method == 'POST':
+        attendance_id = request.form.get('attendance_id', type=int)
+        requested_status = request.form.get('requested_status')
+        reason = request.form.get('reason', '').strip()
+        record = query_db(
+            """
+            SELECT ar.attendance_id
+            FROM attendance_records ar
+            JOIN class_sessions csess ON ar.session_id = csess.session_id
+            JOIN class_schedules sch ON csess.schedule_id = sch.schedule_id
+            JOIN subjects sub ON sch.subject_id = sub.subject_id
+            WHERE ar.attendance_id = %s AND sub.dept_id = %s
+            """,
+            (attendance_id, hod_dept_id),
+            one=True,
+        )
+        if not record:
+            flash('Attendance record not found in your department.', 'error')
+        elif requested_status not in ['Present', 'Absent', 'Late']:
+            flash('Invalid requested status.', 'error')
+        elif not reason:
+            flash('Reason is required.', 'error')
+        else:
+            request_id = execute_db(
+                """
+                INSERT INTO attendance_correction_requests
+                    (attendance_id, requested_status, reason, requested_by, status)
+                VALUES (%s, %s, %s, %s, 'PENDING')
+                """,
+                (attendance_id, requested_status, reason, session.get('user_id')),
+            )
+            _log_hod_action('REQUEST_ATTENDANCE_CORRECTION', 'attendance_correction_requests', request_id, reason)
+            flash('Correction request created.', 'success')
+            return redirect(url_for('.attendance_corrections'))
+
+    requests = query_db(
+        """
+        SELECT acr.*, ar.status AS current_status, st.student_name, st.prn,
+               sub.subject_code, sub.subject_name, csess.session_date,
+               requester.full_name AS requested_by_name,
+               reviewer.full_name AS reviewed_by_name
+        FROM attendance_correction_requests acr
+        JOIN attendance_records ar ON acr.attendance_id = ar.attendance_id
+        JOIN students st ON ar.student_id = st.student_id
+        JOIN class_sessions csess ON ar.session_id = csess.session_id
+        JOIN class_schedules sch ON csess.schedule_id = sch.schedule_id
+        JOIN subjects sub ON sch.subject_id = sub.subject_id
+        LEFT JOIN users requester ON acr.requested_by = requester.user_id
+        LEFT JOIN users reviewer ON acr.reviewed_by = reviewer.user_id
+        WHERE sub.dept_id = %s
+        ORDER BY acr.created_at DESC
+        LIMIT 200
+        """,
+        (hod_dept_id,),
+    ) or []
+    records = query_db(
+        """
+        SELECT ar.attendance_id, ar.status, st.student_name, st.prn,
+               sub.subject_code, csess.session_date
+        FROM attendance_records ar
+        JOIN students st ON ar.student_id = st.student_id
+        JOIN class_sessions csess ON ar.session_id = csess.session_id
+        JOIN class_schedules sch ON csess.schedule_id = sch.schedule_id
+        JOIN subjects sub ON sch.subject_id = sub.subject_id
+        WHERE sub.dept_id = %s
+        ORDER BY ar.marked_time DESC
+        LIMIT 150
+        """,
+        (hod_dept_id,),
+    ) or []
+    return render_template('hod/attendance_corrections.html', requests=requests, records=records)
+
+
+@hod_bp.route('/attendance/corrections/<int:request_id>/<action>', methods=['POST'])
+@login_required
+@role_required('HOD')
+def review_attendance_correction(request_id, action):
+    hod_dept_id = _hod_dept_id()
+    if action not in ['approve', 'reject']:
+        flash('Invalid correction action.', 'error')
+        return redirect(url_for('.attendance_corrections'))
+
+    correction = query_db(
+        """
+        SELECT acr.*, ar.attendance_id
+        FROM attendance_correction_requests acr
+        JOIN attendance_records ar ON acr.attendance_id = ar.attendance_id
+        JOIN class_sessions csess ON ar.session_id = csess.session_id
+        JOIN class_schedules sch ON csess.schedule_id = sch.schedule_id
+        JOIN subjects sub ON sch.subject_id = sub.subject_id
+        WHERE acr.request_id = %s AND sub.dept_id = %s
+        """,
+        (request_id, hod_dept_id),
+        one=True,
+    )
+    if not correction:
+        flash('Correction request not found in your department.', 'error')
+        return redirect(url_for('.attendance_corrections'))
+    if correction['status'] != 'PENDING':
+        flash('Correction request has already been reviewed.', 'warning')
+        return redirect(url_for('.attendance_corrections'))
+
+    if action == 'approve':
+        execute_db(
+            """
+            UPDATE attendance_records
+            SET status = %s, verification_method = 'MANUAL', marked_by = %s, notes = %s, marked_time = CURRENT_TIMESTAMP
+            WHERE attendance_id = %s
+            """,
+            (correction['requested_status'], session.get('user_id'), correction['reason'], correction['attendance_id']),
+        )
+        new_status = 'APPROVED'
+        flash('Correction approved and attendance updated.', 'success')
+    else:
+        new_status = 'REJECTED'
+        flash('Correction rejected.', 'success')
+
+    execute_db(
+        """
+        UPDATE attendance_correction_requests
+        SET status = %s, reviewed_by = %s, reviewed_at = CURRENT_TIMESTAMP
+        WHERE request_id = %s
+        """,
+        (new_status, session.get('user_id'), request_id),
+    )
+    _log_hod_action(f'{new_status}_ATTENDANCE_CORRECTION', 'attendance_correction_requests', request_id, correction['reason'])
+    return redirect(url_for('.attendance_corrections'))
+
+
+@hod_bp.route('/audit-logs')
+@login_required
+@role_required('HOD')
+def audit_logs():
+    logs = query_db(
+        """
+        SELECT al.*, u.full_name AS actor_name
+        FROM audit_logs al
+        LEFT JOIN users u ON al.actor_user_id = u.user_id
+        WHERE al.actor_user_id = %s
+           OR al.action LIKE '%%SCHEDULE%%'
+           OR al.action LIKE '%%STUDENT%%'
+           OR al.action LIKE '%%ATTENDANCE_CORRECTION%%'
+        ORDER BY al.created_at DESC
+        LIMIT 200
+        """,
+        (session.get('user_id'),),
+    ) or []
+    return render_template('hod/audit_logs.html', logs=logs)
+

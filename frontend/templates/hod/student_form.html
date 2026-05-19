@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+{% block title %}{{ 'Edit' if student else 'Add' }} Student - Attendify{% endblock %}
+
+{% block content %}
+<div class="section-card p-6 max-w-4xl mx-auto">
+    <h1 class="text-xl font-black text-gray-900 mb-5">{{ 'Edit' if student else 'Add' }} Department Student</h1>
+    <form method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <input name="student_name" value="{{ student.student_name if student else '' }}" class="input-field !pl-3" placeholder="Student name" required>
+        <input name="prn" value="{{ student.prn if student else '' }}" class="input-field !pl-3" placeholder="PRN" required>
+        {% if not student %}
+        <input name="username" class="input-field !pl-3" placeholder="Login username" required>
+        <input name="password" type="password" class="input-field !pl-3" placeholder="Login password" required>
+        {% endif %}
+        <input name="roll_no" value="{{ student.roll_no if student else '' }}" class="input-field !pl-3" placeholder="Roll number">
+        <input name="division" value="{{ student.division if student else '' }}" class="input-field !pl-3" placeholder="Division" required>
+        <input name="academic_year" value="{{ student.academic_year if student else '' }}" class="input-field !pl-3" placeholder="Academic year" required>
+        <input name="email" value="{{ student.email if student else '' }}" type="email" class="input-field !pl-3" placeholder="Email">
+        <input name="phone" value="{{ student.phone if student else '' }}" class="input-field !pl-3" placeholder="Phone">
+        {% if student %}
+        <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 md:col-span-2">
+            <input type="checkbox" name="is_active" {% if student.is_active %}checked{% endif %}> Student active
+        </label>
+        {% endif %}
+        <div class="md:col-span-2 flex gap-3 mt-3">
+            <button class="btn-primary">{{ 'Save Changes' if student else 'Add Student' }}</button>
+            <a href="{{ url_for('hod.manage_students') }}" class="px-5 py-3 rounded-lg bg-gray-100 text-gray-700 font-bold">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

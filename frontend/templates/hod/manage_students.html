@@ -1,0 +1,82 @@
+{% extends "layout.html" %}
+{% block title %}Department Students - Attendify{% endblock %}
+
+{% block content %}
+<div class="animated-gradient rounded-2xl p-7 mb-7 shadow-xl">
+    <div class="flex items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-black text-white">Department Students</h1>
+            <p class="text-purple-200 text-sm mt-0.5">Manage students, account status, and face enrollment coverage</p>
+        </div>
+        <a href="{{ url_for('hod.add_student') }}" class="bg-white text-indigo-700 px-4 py-2 rounded-lg font-bold text-sm">
+            <i class="fa-solid fa-user-plus mr-1"></i>Add Student
+        </a>
+    </div>
+</div>
+
+<div class="section-card p-6 mb-6">
+    <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+        <input name="search" value="{{ filters.search }}" class="input-field !pl-3" placeholder="Search name, PRN, roll">
+        <select name="division" class="input-field !pl-3">
+            <option value="">All divisions</option>
+            {% for row in divisions %}
+            <option value="{{ row.division }}" {% if filters.division == row.division %}selected{% endif %}>{{ row.division }}</option>
+            {% endfor %}
+        </select>
+        <select name="academic_year" class="input-field !pl-3">
+            <option value="">All years</option>
+            {% for row in years %}
+            <option value="{{ row.academic_year }}" {% if filters.academic_year == row.academic_year %}selected{% endif %}>{{ row.academic_year }}</option>
+            {% endfor %}
+        </select>
+        <button class="btn-primary">Filter</button>
+    </form>
+</div>
+
+<div class="section-card p-6">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="border-b border-gray-100 text-gray-500 text-sm">
+                    <th class="py-3 px-4 font-semibold">Student</th>
+                    <th class="py-3 px-4 font-semibold">Class</th>
+                    <th class="py-3 px-4 font-semibold">Login</th>
+                    <th class="py-3 px-4 font-semibold">Face Data</th>
+                    <th class="py-3 px-4 font-semibold">Status</th>
+                    <th class="py-3 px-4 font-semibold">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="text-sm">
+                {% for student in students %}
+                <tr class="border-b border-gray-50">
+                    <td class="py-3 px-4">
+                        <p class="font-semibold text-gray-900">{{ student.student_name }}</p>
+                        <p class="text-xs text-gray-500">{{ student.prn }}{% if student.roll_no %} / Roll {{ student.roll_no }}{% endif %}</p>
+                    </td>
+                    <td class="py-3 px-4 text-gray-600">{{ student.division }} / {{ student.academic_year }}</td>
+                    <td class="py-3 px-4 text-gray-600">{{ student.username or 'No account' }}</td>
+                    <td class="py-3 px-4">
+                        {% if student.embedding_count %}
+                        <span class="badge-success">{{ student.embedding_count }} embeddings</span>
+                        {% else %}
+                        <span class="badge-warning">Missing</span>
+                        {% endif %}
+                    </td>
+                    <td class="py-3 px-4">{% if student.is_active %}<span class="badge-success">Active</span>{% else %}<span class="badge-danger">Inactive</span>{% endif %}</td>
+                    <td class="py-3 px-4">
+                        <div class="flex gap-3">
+                            <a href="{{ url_for('hod.edit_student', student_id=student.student_id) }}" class="text-indigo-600 font-semibold text-xs">Edit</a>
+                            <form method="POST" action="{{ url_for('hod.toggle_student', student_id=student.student_id) }}">
+                                <button class="text-amber-600 font-semibold text-xs">{{ 'Deactivate' if student.is_active else 'Activate' }}</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="py-8 text-center text-gray-500">No students found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

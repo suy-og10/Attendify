@@ -161,4 +161,22 @@ CREATE TABLE audit_logs (
     INDEX idx_audit_entity (entity_type, entity_id)
 ) ENGINE=InnoDB;
 
+-- 11. Attendance Correction Requests Table
+DROP TABLE IF EXISTS attendance_correction_requests;
+CREATE TABLE attendance_correction_requests (
+    request_id INT AUTO_INCREMENT PRIMARY KEY,
+    attendance_id INT NOT NULL,
+    requested_status ENUM('Present', 'Absent', 'Late') NOT NULL,
+    reason TEXT NOT NULL,
+    requested_by INT NOT NULL,
+    reviewed_by INT NULL,
+    status ENUM('PENDING', 'APPROVED', 'REJECTED') DEFAULT 'PENDING',
+    reviewed_at TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (attendance_id) REFERENCES attendance_records(attendance_id) ON DELETE CASCADE,
+    FOREIGN KEY (requested_by) REFERENCES users(user_id),
+    FOREIGN KEY (reviewed_by) REFERENCES users(user_id),
+    INDEX idx_correction_status (status, created_at)
+) ENGINE=InnoDB;
+
 SET FOREIGN_KEY_CHECKS=1; -- Re-enable FK checks

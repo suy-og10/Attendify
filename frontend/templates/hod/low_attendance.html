@@ -1,0 +1,52 @@
+{% extends "layout.html" %}
+{% block title %}Low Attendance - Attendify{% endblock %}
+
+{% block content %}
+<div class="animated-gradient rounded-2xl p-7 mb-7 shadow-xl">
+    <h1 class="text-2xl font-black text-white">Low Attendance Report</h1>
+    <p class="text-purple-200 text-sm mt-0.5">Students below the selected department threshold</p>
+</div>
+
+<div class="section-card p-6 mb-6">
+    <form method="GET" class="flex gap-3 items-end">
+        <div>
+            <label class="block text-xs font-bold text-gray-500 mb-1">Threshold %</label>
+            <input name="threshold" value="{{ threshold }}" type="number" min="1" max="100" class="input-field !pl-3 w-36">
+        </div>
+        <button class="btn-primary">Apply</button>
+    </form>
+</div>
+
+<div class="section-card p-6">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="border-b border-gray-100 text-gray-500 text-sm">
+                    <th class="py-3 px-4 font-semibold">Student</th>
+                    <th class="py-3 px-4 font-semibold">Subject</th>
+                    <th class="py-3 px-4 font-semibold">Class</th>
+                    <th class="py-3 px-4 font-semibold">Attendance</th>
+                </tr>
+            </thead>
+            <tbody class="text-sm">
+                {% for row in rows %}
+                <tr class="border-b border-gray-50">
+                    <td class="py-3 px-4">
+                        <p class="font-semibold text-gray-900">{{ row.student_name }}</p>
+                        <p class="text-xs text-gray-500">{{ row.prn }}</p>
+                    </td>
+                    <td class="py-3 px-4 text-gray-700">{{ row.subject_code }} - {{ row.subject_name }}</td>
+                    <td class="py-3 px-4 text-gray-600">{{ row.division }} / {{ row.academic_year }}</td>
+                    <td class="py-3 px-4">
+                        <span class="badge-danger">{{ row.attendance_percentage }}%</span>
+                        <span class="text-xs text-gray-500 ml-2">{{ row.present_count or 0 }}/{{ row.total_sessions }}</span>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4" class="py-8 text-center text-gray-500">No students below {{ threshold }}%.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
