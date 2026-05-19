@@ -1,0 +1,65 @@
+{% extends "layout.html" %}
+{% block title %}{{ 'Edit' if user else 'Create' }} User - Attendify{% endblock %}
+
+{% block content %}
+<div class="section-card p-6 max-w-4xl mx-auto">
+    <h1 class="text-xl font-black text-gray-900 mb-5">{{ 'Edit' if user else 'Create' }} User</h1>
+    <form method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+            <label class="block text-xs font-bold text-gray-500 mb-1">Full Name</label>
+            <input name="full_name" value="{{ user.full_name if user else '' }}" class="input-field !pl-3" required>
+        </div>
+        <div>
+            <label class="block text-xs font-bold text-gray-500 mb-1">Username</label>
+            <input name="username" value="{{ user.username if user else '' }}" class="input-field !pl-3" {% if user %}disabled{% endif %} required>
+        </div>
+        <div>
+            <label class="block text-xs font-bold text-gray-500 mb-1">Email</label>
+            <input name="email" value="{{ user.email if user else '' }}" class="input-field !pl-3" type="email">
+        </div>
+        <div>
+            <label class="block text-xs font-bold text-gray-500 mb-1">Role</label>
+            <select name="role" class="input-field !pl-3">
+                {% for role in ['Admin', 'HOD', 'Teacher', 'Student'] %}
+                <option value="{{ role }}" {% if user and user.role == role %}selected{% endif %}>{{ role }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-bold text-gray-500 mb-1">Department</label>
+            <select name="dept_id" class="input-field !pl-3">
+                <option value="">None</option>
+                {% for dept in departments %}
+                <option value="{{ dept.dept_id }}" {% if user and user.dept_id == dept.dept_id %}selected{% endif %}>{{ dept.dept_code }} - {{ dept.dept_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-bold text-gray-500 mb-1">{{ 'New Password' if user else 'Password' }}</label>
+            <input name="password" class="input-field !pl-3" type="password" {% if not user %}required{% endif %}>
+        </div>
+        <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 md:col-span-2">
+            <input type="checkbox" name="is_active" {% if not user or user.is_active %}checked{% endif %}>
+            Account active
+        </label>
+
+        {% if not user %}
+        <div class="md:col-span-2 border-t pt-4">
+            <h2 class="text-sm font-bold text-gray-900 mb-3">Student-only fields</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <input name="prn" class="input-field !pl-3" placeholder="PRN">
+                <input name="roll_no" class="input-field !pl-3" placeholder="Roll No">
+                <input name="division" class="input-field !pl-3" placeholder="Division">
+                <input name="academic_year" class="input-field !pl-3" placeholder="Academic Year">
+                <input name="phone" class="input-field !pl-3 md:col-span-2" placeholder="Phone">
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="md:col-span-2 flex gap-3 mt-3">
+            <button class="btn-primary">{{ 'Save Changes' if user else 'Create User' }}</button>
+            <a href="{{ url_for('admin.users') }}" class="px-5 py-3 rounded-lg bg-gray-100 text-gray-700 font-bold">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

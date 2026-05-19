@@ -1,147 +1,124 @@
 {% extends "layout.html" %}
-{% block title %}All Users — Attendify{% endblock %}
+{% block title %}User Management - Attendify{% endblock %}
 
 {% block content %}
-<!-- Header -->
-<div class="animated-gradient rounded-2xl p-7 mb-7 relative overflow-hidden shadow-xl">
-    <div class="relative z-10 flex items-center gap-4">
-        <div class="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0">
-            <i class="fa-solid fa-users text-white text-2xl"></i>
+<div class="animated-gradient rounded-2xl p-7 mb-7 shadow-xl">
+    <div class="flex items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <div class="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center">
+                <i class="fa-solid fa-users text-white text-2xl"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl font-black text-white">User Management</h1>
+                <p class="text-purple-200 text-sm mt-0.5">Create, edit, activate, deactivate, and reset accounts</p>
+            </div>
         </div>
-        <div>
-            <h1 class="text-2xl font-black text-white">All Users</h1>
-            <p class="text-purple-200 text-sm mt-0.5">Manage ERP Coordinators, Teachers, and Students</p>
-        </div>
+        <a href="{{ url_for('admin.create_user') }}" class="bg-white text-indigo-700 px-4 py-2 rounded-lg font-bold text-sm">
+            <i class="fa-solid fa-user-plus mr-1"></i>New User
+        </a>
     </div>
 </div>
 
-<div class="space-y-6">
-    <!-- HODs -->
-    <div class="section-card p-6">
-        <div class="flex items-center gap-3 mb-5">
-            <div class="w-10 h-10 grad-amber rounded-xl flex items-center justify-center shadow">
-                <i class="fa-solid fa-user-tie text-white text-base"></i>
-            </div>
-            <h2 class="text-base font-bold text-gray-900">ERP Coordinators</h2>
+<div class="section-card p-6 mb-6">
+    <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+        <div>
+            <label class="block text-xs font-bold text-gray-500 mb-1">Search</label>
+            <input name="search" value="{{ filters.search }}" class="input-field !pl-3" placeholder="Name, username, email">
         </div>
-        {% if hods %}
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="border-b border-gray-100 text-gray-500 text-sm">
-                        <th class="py-3 px-4 font-semibold">Name</th>
-                        <th class="py-3 px-4 font-semibold">Username</th>
-                        <th class="py-3 px-4 font-semibold">Email</th>
-                        <th class="py-3 px-4 font-semibold">Department</th>
-                        <th class="py-3 px-4 font-semibold">Status</th>
-                    </tr>
-                </thead>
-                <tbody class="text-sm">
-                    {% for hod in hods %}
-                    <tr class="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                        <td class="py-3 px-4 font-medium text-gray-900">{{ hod.full_name }}</td>
-                        <td class="py-3 px-4 text-gray-600">{{ hod.username }}</td>
-                        <td class="py-3 px-4 text-gray-600">{{ hod.email or 'N/A' }}</td>
-                        <td class="py-3 px-4 text-gray-700">{{ hod.dept_name or 'N/A' }}</td>
-                        <td class="py-3 px-4">
-                            {% if hod.is_active %}
-                            <span class="badge-success text-xs">Active</span>
-                            {% else %}
-                            <span class="badge-warning text-xs">Pending</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div>
+            <label class="block text-xs font-bold text-gray-500 mb-1">Role</label>
+            <select name="role" class="input-field !pl-3">
+                {% for role in ['all', 'Admin', 'HOD', 'Teacher', 'Student'] %}
+                <option value="{{ role }}" {% if filters.role == role %}selected{% endif %}>{{ role }}</option>
+                {% endfor %}
+            </select>
         </div>
-        {% else %}
-        <p class="text-gray-500 text-sm text-center py-4">No ERP Coordinators found.</p>
-        {% endif %}
-    </div>
+        <div>
+            <label class="block text-xs font-bold text-gray-500 mb-1">Status</label>
+            <select name="status" class="input-field !pl-3">
+                {% for status in ['all', 'active', 'inactive'] %}
+                <option value="{{ status }}" {% if filters.status == status %}selected{% endif %}>{{ status|title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button class="btn-primary">Apply Filters</button>
+    </form>
+</div>
 
-    <!-- Teachers -->
-    <div class="section-card p-6">
-        <div class="flex items-center gap-3 mb-5">
-            <div class="w-10 h-10 grad-primary rounded-xl flex items-center justify-center shadow">
-                <i class="fa-solid fa-chalkboard-user text-white text-base"></i>
-            </div>
-            <h2 class="text-base font-bold text-gray-900">Teachers</h2>
-        </div>
-        {% if teachers %}
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="border-b border-gray-100 text-gray-500 text-sm">
-                        <th class="py-3 px-4 font-semibold">Name</th>
-                        <th class="py-3 px-4 font-semibold">Username</th>
-                        <th class="py-3 px-4 font-semibold">Email</th>
-                        <th class="py-3 px-4 font-semibold">Department</th>
-                        <th class="py-3 px-4 font-semibold">Status</th>
-                    </tr>
-                </thead>
-                <tbody class="text-sm">
-                    {% for teacher in teachers %}
-                    <tr class="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                        <td class="py-3 px-4 font-medium text-gray-900">{{ teacher.full_name }}</td>
-                        <td class="py-3 px-4 text-gray-600">{{ teacher.username }}</td>
-                        <td class="py-3 px-4 text-gray-600">{{ teacher.email or 'N/A' }}</td>
-                        <td class="py-3 px-4 text-gray-700">{{ teacher.dept_name or 'N/A' }}</td>
-                        <td class="py-3 px-4">
-                            {% if teacher.is_active %}
-                            <span class="badge-success text-xs">Active</span>
-                            {% else %}
-                            <span class="badge-danger text-xs">Inactive</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <p class="text-gray-500 text-sm text-center py-4">No teachers found.</p>
-        {% endif %}
+<div class="section-card p-6 mb-6">
+    <h2 class="text-base font-bold text-gray-900 mb-5">Accounts</h2>
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="border-b border-gray-100 text-gray-500 text-sm">
+                    <th class="py-3 px-4 font-semibold">Name</th>
+                    <th class="py-3 px-4 font-semibold">Username</th>
+                    <th class="py-3 px-4 font-semibold">Role</th>
+                    <th class="py-3 px-4 font-semibold">Department</th>
+                    <th class="py-3 px-4 font-semibold">Status</th>
+                    <th class="py-3 px-4 font-semibold">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="text-sm">
+                {% for user in users %}
+                <tr class="border-b border-gray-50 hover:bg-gray-50/50">
+                    <td class="py-3 px-4 font-medium text-gray-900">{{ user.full_name }}</td>
+                    <td class="py-3 px-4 text-gray-600">{{ user.username }}</td>
+                    <td class="py-3 px-4"><span class="badge-info">{{ user.role }}</span></td>
+                    <td class="py-3 px-4 text-gray-700">{{ user.dept_name or '-' }}</td>
+                    <td class="py-3 px-4">
+                        {% if user.is_active %}<span class="badge-success">Active</span>{% else %}<span class="badge-danger">Inactive</span>{% endif %}
+                    </td>
+                    <td class="py-3 px-4">
+                        <div class="flex flex-wrap gap-2 items-center">
+                            <a href="{{ url_for('admin.edit_user', user_id=user.user_id) }}" class="text-indigo-600 font-semibold text-xs">Edit</a>
+                            <form method="POST" action="{{ url_for('admin.toggle_user', user_id=user.user_id) }}">
+                                <button class="text-amber-600 font-semibold text-xs">{{ 'Deactivate' if user.is_active else 'Activate' }}</button>
+                            </form>
+                            <form method="POST" action="{{ url_for('admin.reset_user_password', user_id=user.user_id) }}" class="flex gap-1" onsubmit="return confirm('Reset password for this user?');">
+                                <input name="password" placeholder="New password" class="border rounded px-2 py-1 text-xs w-28">
+                                <button class="text-sky-600 font-semibold text-xs">Reset</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="py-8 text-center text-gray-500">No matching users found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
+</div>
 
-    <!-- Students -->
-    <div class="section-card p-6">
-        <div class="flex items-center gap-3 mb-5">
-            <div class="w-10 h-10 grad-success rounded-xl flex items-center justify-center shadow">
-                <i class="fa-solid fa-user-graduate text-white text-base"></i>
-            </div>
-            <h2 class="text-base font-bold text-gray-900">Students</h2>
-        </div>
-        {% if students %}
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="border-b border-gray-100 text-gray-500 text-sm">
-                        <th class="py-3 px-4 font-semibold">Name</th>
-                        <th class="py-3 px-4 font-semibold">PRN</th>
-                        <th class="py-3 px-4 font-semibold">Roll No</th>
-                        <th class="py-3 px-4 font-semibold">Div</th>
-                        <th class="py-3 px-4 font-semibold">Department</th>
-                        <th class="py-3 px-4 font-semibold">Year</th>
-                    </tr>
-                </thead>
-                <tbody class="text-sm">
-                    {% for student in students %}
-                    <tr class="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                        <td class="py-3 px-4 font-medium text-gray-900">{{ student.student_name }}</td>
-                        <td class="py-3 px-4 text-gray-600">{{ student.prn }}</td>
-                        <td class="py-3 px-4 text-gray-600">{{ student.roll_no or 'N/A' }}</td>
-                        <td class="py-3 px-4 text-gray-600">{{ student.division or 'N/A' }}</td>
-                        <td class="py-3 px-4 text-gray-700">{{ student.dept_name or 'N/A' }}</td>
-                        <td class="py-3 px-4 text-gray-600">{{ student.academic_year }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <p class="text-gray-500 text-sm text-center py-4">No students found.</p>
-        {% endif %}
+<div class="section-card p-6">
+    <h2 class="text-base font-bold text-gray-900 mb-5">Student Profiles</h2>
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="border-b border-gray-100 text-gray-500 text-sm">
+                    <th class="py-3 px-4 font-semibold">Student</th>
+                    <th class="py-3 px-4 font-semibold">PRN</th>
+                    <th class="py-3 px-4 font-semibold">Roll</th>
+                    <th class="py-3 px-4 font-semibold">Division</th>
+                    <th class="py-3 px-4 font-semibold">Department</th>
+                    <th class="py-3 px-4 font-semibold">Account</th>
+                </tr>
+            </thead>
+            <tbody class="text-sm">
+                {% for student in students %}
+                <tr class="border-b border-gray-50">
+                    <td class="py-3 px-4 font-medium text-gray-900">{{ student.student_name }}</td>
+                    <td class="py-3 px-4 text-gray-600">{{ student.prn }}</td>
+                    <td class="py-3 px-4 text-gray-600">{{ student.roll_no or '-' }}</td>
+                    <td class="py-3 px-4 text-gray-600">{{ student.division or '-' }}</td>
+                    <td class="py-3 px-4 text-gray-700">{{ student.dept_name or '-' }}</td>
+                    <td class="py-3 px-4 text-gray-600">{{ student.username or 'No login linked' }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="py-8 text-center text-gray-500">No students found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% endblock %}
