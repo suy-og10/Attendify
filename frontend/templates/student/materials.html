@@ -34,9 +34,7 @@
 </div>
 
 <!-- Materials Grid -->
-{% if materials %}
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-    {% for mat in materials %}
+{% macro render_material(mat) %}
     {% set ext = mat.file_name.rsplit('.', 1)[1].lower() if '.' in mat.file_name else '' %}
     {% set icon_class = 'fa-file-pdf text-rose-500' if ext == 'pdf'
                    else 'fa-file-word text-blue-500' if ext in ('doc', 'docx')
@@ -84,8 +82,30 @@
             </div>
         </div>
     </div>
-    {% endfor %}
-</div>
+{% endmacro %}
+
+{% if materials %}
+    {% if not subject_filter %}
+        {% for subject_name, subject_materials in materials|groupby('subject_name') %}
+        <div class="mb-8">
+            <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <span class="text-xs font-bold text-indigo-500 bg-indigo-50 px-2 py-1 rounded-md border border-indigo-100">{{ subject_materials[0].subject_code }}</span>
+                {{ subject_name }}
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for mat in subject_materials %}
+                    {{ render_material(mat) }}
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for mat in materials %}
+                {{ render_material(mat) }}
+            {% endfor %}
+        </div>
+    {% endif %}
 {% else %}
 <div class="section-card">
     <div class="flex flex-col items-center text-center py-16">
