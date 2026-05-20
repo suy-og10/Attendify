@@ -149,6 +149,22 @@ def create_app(config_class=None):
                                             recognized
                                         )
                                         time.sleep(int(app.config.get('AUTO_ATTENDANCE_FRAME_INTERVAL_SECONDS', 3)))
+                                    
+                                    # Post-attendance auto-end: mark session completed and mark rest as Absent
+                                    _x("UPDATE class_sessions SET status = 'COMPLETED', actual_end_time = CURRENT_TIMESTAMP WHERE session_id = %s AND status = 'ONGOING'", (sess_id,))
+                                    _x("""
+                                        INSERT INTO attendance_records (session_id, student_id, status, verification_method, marked_by)
+                                        SELECT %s, s.student_id, 'Absent', 'MANUAL', %s
+                                        FROM students s
+                                        WHERE s.division = %s
+                                          AND s.academic_year = %s
+                                          AND s.dept_id = %s
+                                          AND s.is_active = TRUE
+                                          AND s.student_id NOT IN (
+                                              SELECT ar.student_id FROM attendance_records ar WHERE ar.session_id = %s
+                                          )
+                                    """, (sess_id, meta['teacher_id'], meta['division'], meta['academic_year'], meta['dept_id'], sess_id))
+                                    app.logger.info(f"Auto-attendance ended: session {sess_id} marked COMPLETED, remaining students marked Absent.")
                                 finally:
                                     try:
                                         cap.release()
