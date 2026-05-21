@@ -125,6 +125,15 @@ def create_app(config_class=None):
                         window_end = start_dt + datetime.timedelta(minutes=5)
                         if now < window_start or now > window_end:
                             continue
+
+                        # Check if session already exists and is completed/cancelled to avoid resetting and restarting it
+                        existing = _q(
+                            "SELECT session_id, status FROM class_sessions WHERE schedule_id = %s AND session_date = %s",
+                            (sch['schedule_id'], today_iso), one=True
+                        )
+                        if existing and existing['status'] in ('COMPLETED', 'CANCELLED'):
+                            continue
+
                         session_id = _ensure_session_and_get_id(_q, _x, sch['schedule_id'], today_iso)
                         if not session_id:
                             continue
@@ -138,6 +147,12 @@ def create_app(config_class=None):
                                 try:
                                     end_ts = window_end
                                     while datetime.datetime.now() <= end_ts:
+                                        # Check if the session is still ongoing in the database
+                                        sess_status = _q("SELECT status FROM class_sessions WHERE session_id = %s", (sess_id,), one=True)
+                                        if not sess_status or sess_status['status'] != 'ONGOING':
+                                            app.logger.info(f"Session {sess_id} is no longer ONGOING (status: {sess_status['status'] if sess_status else 'None'}). Terminating auto-attendance worker thread early.")
+                                            break
+
                                         ok, frame = cap.read()
                                         if not ok or frame is None:
                                             time.sleep(1)
