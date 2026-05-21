@@ -53,11 +53,20 @@
             </div>
             <div class="flex-shrink-0">
                 {% if session_info %}
-                {% if session_info.status in ('ONGOING', 'SCHEDULED') %}
+                {% if session_info.status == 'ONGOING' %}
                 <a href="{{ url_for('teacher.take_attendance_page', session_id=session_info.session_id) }}"
                     class="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-2 px-4 rounded-lg transition-all hover:-translate-y-0.5 shadow-sm">
                     <i class="fa-solid fa-circle-play"></i> Continue Session
                 </a>
+                {% elif session_info.status == 'SCHEDULED' %}
+                <form action="{{ url_for('teacher.start_session') }}" method="POST" class="inline">
+                    <input type="hidden" name="schedule_id" value="{{ schedule.schedule_id }}">
+                    <input type="hidden" name="session_date" value="{{ today_date }}">
+                    <button type="submit"
+                        class="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold py-2 px-4 rounded-lg transition-all hover:-translate-y-0.5 shadow-sm">
+                        <i class="fa-solid fa-play"></i> Start Session
+                    </button>
+                </form>
                 {% elif session_info.status == 'COMPLETED' %}
                 <a href="{{ url_for('teacher.view_attendance', session_id=session_info.session_id) }}"
                     class="inline-flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-bold py-2 px-4 rounded-lg transition-all">
