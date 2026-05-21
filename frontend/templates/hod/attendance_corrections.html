@@ -8,22 +8,10 @@
 </div>
 
 <div class="section-card p-6 mb-6">
-    <h2 class="text-base font-bold text-gray-900 mb-4">Create Correction Request</h2>
-    <form method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-        <select name="attendance_id" class="input-field !pl-3" required>
-            <option value="">Select record</option>
-            {% for record in records %}
-            <option value="{{ record.attendance_id }}">{{ record.session_date }} - {{ record.student_name }} ({{ record.prn }}) - {{ record.subject_code }} - {{ record.status }}</option>
-            {% endfor %}
-        </select>
-        <select name="requested_status" class="input-field !pl-3" required>
-            <option value="Present">Present</option>
-            <option value="Absent">Absent</option>
-            <option value="Late">Late</option>
-        </select>
-        <input name="reason" class="input-field !pl-3" placeholder="Correction reason" required>
-        <button class="btn-primary">Request</button>
-    </form>
+    <h2 class="text-base font-bold text-gray-900 mb-4">Correction Requests</h2>
+    <p class="text-sm text-gray-600">Teachers submit correction requests from the session attendance view. Use the table
+        below to review, approve, or reject those requests. You may edit requested fields when appropriate before
+        approving.</p>
 </div>
 
 <div class="section-card p-6">
@@ -43,18 +31,29 @@
                 <tr class="border-b border-gray-50 align-top">
                     <td class="py-3 px-4">
                         <p class="font-semibold text-gray-900">{{ req.student_name }} / {{ req.prn }}</p>
-                        <p class="text-xs text-gray-500">{{ req.session_date }} - {{ req.subject_code }} {{ req.subject_name }}</p>
+                        <p class="text-xs text-gray-500">{{ req.session_date }} - {{ req.subject_code }} {{
+                            req.subject_name }}</p>
                     </td>
                     <td class="py-3 px-4 text-gray-700">{{ req.current_status }} -> {{ req.requested_status }}</td>
                     <td class="py-3 px-4 text-gray-600">{{ req.reason }}</td>
                     <td class="py-3 px-4"><span class="badge-info">{{ req.status }}</span></td>
                     <td class="py-3 px-4">
                         {% if req.status == 'PENDING' %}
-                        <div class="flex gap-2">
-                            <form method="POST" action="{{ url_for('hod.review_attendance_correction', request_id=req.request_id, action='approve') }}">
+                        <div class="flex gap-2 items-center">
+                            <form method="POST"
+                                action="{{ url_for('hod.review_attendance_correction', request_id=req.request_id, action='approve') }}"
+                                class="flex items-center gap-2">
+                                <select name="final_status" class="input-field text-sm py-1 px-2" title="Final status">
+                                    <option value="">{{ 'Use requested (' ~ req.requested_status ~ ')' }}</option>
+                                    <option value="Present">Present</option>
+                                    <option value="Absent">Absent</option>
+                                    <option value="Late">Late</option>
+                                    <option value="Not Considered">Not Considered</option>
+                                </select>
                                 <button class="text-emerald-600 font-semibold text-xs">Approve</button>
                             </form>
-                            <form method="POST" action="{{ url_for('hod.review_attendance_correction', request_id=req.request_id, action='reject') }}">
+                            <form method="POST"
+                                action="{{ url_for('hod.review_attendance_correction', request_id=req.request_id, action='reject') }}">
                                 <button class="text-rose-600 font-semibold text-xs">Reject</button>
                             </form>
                         </div>
@@ -64,7 +63,9 @@
                     </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="5" class="py-8 text-center text-gray-500">No correction requests found.</td></tr>
+                <tr>
+                    <td colspan="5" class="py-8 text-center text-gray-500">No correction requests found.</td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>

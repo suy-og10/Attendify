@@ -1,8 +1,9 @@
-from flask import Blueprint, render_template, session, redirect, url_for, flash, current_app, send_file, request
+from flask import Blueprint, render_template, session, redirect, url_for, flash, current_app, send_file, request, jsonify
 import os
 from datetime import date
 from backend.utils import login_required, role_required
 from backend.database import query_db
+from backend.database import execute_db
 
 student_bp = Blueprint('student', __name__, template_folder='../../frontend/templates')
 
@@ -100,6 +101,59 @@ def dashboard():
                            recent_materials=recent_materials or [],
                            selected_date=target_date)
 
+
+@student_bp.route('/api/corrections/submit', methods=['POST'])
+@login_required
+@role_required('Student')
+def api_submit_student_correction():
+    user_id = session.get('user_id')
+    # map to student_id
+    student = query_db("SELECT student_id FROM students WHERE user_id = %s", (user_id,), one=True)
+    if not student:
+        return jsonify({"error": "Student profile not found"}), 403
+
+    data = request.json or {}
+    attendance_id = data.get('attendance_id')
+    requested_status = data.get('requested_status')
+    reason = (data.get('reason') or '').strip()
+
+    if not attendance_id or not requested_status or not reason:
+        return jsonify({"error": "attendance_id, requested_status, and reason are required"}), 400
+
+    if requested_status not in ('Present', 'Absent', 'Late'):
+        return jsonify({"error": "Invalid requested_status"}), 400
+
+    # Verify this attendance record belongs to this student
+    ownership = query_db("""
+        SELECT ar.attendance_id, csess.status AS session_status
+        FROM attendance_records ar
+        JOIN class_sessions csess ON ar.session_id = csess.session_id
+        WHERE ar.attendance_id = %s AND ar.student_id = %s
+    """, (attendance_id, student['student_id']), one=True)
+
+    if not ownership:
+        return jsonify({"error": "Attendance record not found or access denied"}), 403
+
+    if ownership['session_status'] != 'COMPLETED':
+        return jsonify({"error": "Corrections can only be requested for completed sessions"}), 400
+
+    existing = query_db(
+        "SELECT request_id FROM attendance_correction_requests WHERE attendance_id = %s AND status = 'PENDING'",
+        (attendance_id,), one=True
+    )
+    if existing:
+        return jsonify({"error": "A pending correction request already exists for this record"}), 409
+
+    try:
+        request_id = execute_db("""
+            INSERT INTO attendance_correction_requests (attendance_id, requested_status, reason, requested_by)
+            VALUES (%s, %s, %s, %s)
+        """, (attendance_id, requested_status, reason, user_id))
+        return jsonify({"success": True, "request_id": request_id}), 201
+    except Exception as e:
+        current_app.logger.error(f"Error submitting student correction: {e}", exc_info=True)
+        return jsonify({"error": f"Database error: {e}"}), 500
+
 @student_bp.route('/subject/<int:subject_id>/details')
 @login_required
 @role_required('Student')
@@ -123,6 +177,7 @@ def view_details(subject_id):
             cs.actual_start_time,
             cs.actual_end_time,
             u.full_name as teacher_name,
+            ar.attendance_id,
             COALESCE(ar.status, 'Absent') as status
         FROM class_sessions cs
         JOIN class_schedules sch ON cs.schedule_id = sch.schedule_id

@@ -5,19 +5,23 @@
 <div class="mb-6">
     <a href="{{ url_for('student.dashboard') }}"
         class="inline-flex items-center text-gray-600 hover:text-indigo-600 text-sm font-semibold mb-4 transition-colors group bg-white px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm hover:shadow">
-        <i class="fa-solid fa-arrow-left mr-2 text-gray-400 group-hover:text-indigo-500 transition-colors"></i> Back to Dashboard
+        <i class="fa-solid fa-arrow-left mr-2 text-gray-400 group-hover:text-indigo-500 transition-colors"></i> Back to
+        Dashboard
     </a>
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="flex items-center gap-3">
-            <div class="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold shadow-inner text-xl">
+            <div
+                class="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold shadow-inner text-xl">
                 <i class="fa-solid fa-book"></i>
             </div>
             <div>
                 <h1 class="text-2xl font-black text-gray-900">{{ subject.subject_name }}</h1>
-                <p class="text-gray-500 text-sm mt-0.5 font-medium"><span class="badge-info mr-2">{{ subject.subject_code }}</span> Session History & Notes</p>
+                <p class="text-gray-500 text-sm mt-0.5 font-medium"><span class="badge-info mr-2">{{
+                        subject.subject_code }}</span> Session History & Notes</p>
             </div>
         </div>
-        <a href="{{ url_for('student.course_materials', subject_id=subject.subject_id) }}" class="btn-primary text-sm whitespace-nowrap self-start">
+        <a href="{{ url_for('student.course_materials', subject_id=subject.subject_id) }}"
+            class="btn-primary text-sm whitespace-nowrap self-start">
             <i class="fa-solid fa-folder-open mr-1.5"></i> Course Materials
         </a>
     </div>
@@ -25,41 +29,56 @@
 
 <div class="space-y-4">
     {% for record in records %}
-    <div class="section-card p-0 overflow-hidden card-hover border-l-4 {% if record.status == 'Present' %}border-l-emerald-500{% elif record.status == 'Absent' %}border-l-rose-500{% elif record.status == 'Late' %}border-l-amber-500{% else %}border-l-gray-400{% endif %}">
+    <div
+        class="section-card p-0 overflow-hidden card-hover border-l-4 {% if record.status == 'Present' %}border-l-emerald-500{% elif record.status == 'Absent' %}border-l-rose-500{% elif record.status == 'Late' %}border-l-amber-500{% else %}border-l-gray-400{% endif %}">
         <div class="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div class="flex items-center gap-4">
                 <div class="w-12 text-center">
-                    <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">{{ record.session_date.strftime('%b') if record.session_date.strftime else record.session_date }}</p>
-                    <p class="text-xl font-black text-gray-800">{{ record.session_date.strftime('%d') if record.session_date.strftime else '' }}</p>
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">{{
+                        record.session_date.strftime('%b') if record.session_date.strftime else record.session_date }}
+                    </p>
+                    <p class="text-xl font-black text-gray-800">{{ record.session_date.strftime('%d') if
+                        record.session_date.strftime else '' }}</p>
                 </div>
                 <div class="w-px h-10 bg-gray-100 hidden sm:block"></div>
                 <div>
                     <div class="flex items-center gap-2 mb-1">
                         <i class="fa-regular fa-clock text-gray-400 text-xs"></i>
-                        <span class="text-sm font-bold text-gray-700">{{ record.actual_start_time }} {% if record.actual_end_time %} - {{ record.actual_end_time }}{% endif %}</span>
+                        <span class="text-sm font-bold text-gray-700">{{ record.actual_start_time }} {% if
+                            record.actual_end_time %} - {{ record.actual_end_time }}{% endif %}</span>
                     </div>
-                    <p class="text-xs text-gray-500"><i class="fa-solid fa-user-tie text-gray-400 mr-1"></i> {{ record.teacher_name }}</p>
+                    <p class="text-xs text-gray-500"><i class="fa-solid fa-user-tie text-gray-400 mr-1"></i> {{
+                        record.teacher_name }}</p>
                 </div>
             </div>
-            
+
             <div class="flex flex-col sm:items-end gap-2">
                 {% if record.status == 'Present' %}
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                <span
+                    class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
                     <i class="fa-solid fa-check mr-1.5"></i> Present
                 </span>
                 {% elif record.status == 'Absent' %}
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                <span
+                    class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200">
                     <i class="fa-solid fa-xmark mr-1.5"></i> Absent
                 </span>
                 {% elif record.status == 'Late' %}
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                <span
+                    class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
                     <i class="fa-solid fa-clock mr-1.5"></i> Late
                 </span>
                 {% else %}
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-800 border border-gray-200">
+                <span
+                    class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-800 border border-gray-200">
                     {{ record.status }}
                 </span>
                 {% endif %}
+                <div class="mt-2">
+                    <button
+                        onclick="openStudentCorrectionModal({{ record.get('attendance_id', 'null') }}, '{{ record.status }}', '{{ record.teacher_name }}')"
+                        class="text-xs text-indigo-600 font-semibold">Request correction</button>
+                </div>
             </div>
         </div>
 
@@ -81,12 +100,79 @@
     </div>
     {% else %}
     <div class="section-card text-center py-16">
-        <div class="w-16 h-16 bg-gray-50 text-gray-300 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100">
+        <div
+            class="w-16 h-16 bg-gray-50 text-gray-300 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100">
             <i class="fa-solid fa-calendar-xmark text-2xl"></i>
         </div>
         <h3 class="text-sm font-bold text-gray-700 mb-1">No Records Yet</h3>
-        <p class="text-gray-500 text-xs max-w-sm mx-auto">No completed sessions found for this subject. Attendance and class notes will appear here.</p>
+        <p class="text-gray-500 text-xs max-w-sm mx-auto">No completed sessions found for this subject. Attendance and
+            class notes will appear here.</p>
     </div>
     {% endfor %}
+</div>
+
+<!-- Student Correction Modal -->
+<div id="studentCorrectionModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold text-gray-900"><i
+                    class="fa-solid fa-pen-to-square text-indigo-500 mr-2"></i>Request Correction</h3>
+            <button onclick="closeStudentCorrectionModal()" class="text-gray-400 hover:text-gray-600"><i
+                    class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+        <p class="text-sm text-gray-600 mb-1">Student: <span id="studentModalStudentName" class="font-bold"></span></p>
+        <p class="text-sm text-gray-600 mb-4">Current: <span id="studentModalCurrentStatus" class="font-bold"></span>
+        </p>
+        <input type="hidden" id="studentModalAttendanceId">
+        <div class="mb-3">
+            <label class="text-xs font-bold text-gray-600 uppercase block mb-1">Change To</label>
+            <select id="studentModalRequestedStatus"
+                class="w-full bg-gray-50 border border-gray-200 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="Present">Present</option>
+                <option value="Absent">Absent</option>
+                <option value="Late">Late</option>
+            </select>
+        </div>
+        <div class="mb-4">
+            <label class="text-xs font-bold text-gray-600 uppercase block mb-1">Reason *</label>
+            <textarea id="studentModalReason" rows="3" placeholder="Explain why this correction is needed..."
+                class="w-full bg-gray-50 border border-gray-200 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="submitStudentCorrection()" id="submitStudentCorrBtn"
+                class="btn-primary flex-1 text-center text-sm"><i
+                    class="fa-solid fa-paper-plane mr-1"></i>Submit</button>
+            <button onclick="closeStudentCorrectionModal()"
+                class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm py-2 px-4 rounded-xl">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openStudentCorrectionModal(attendanceId, status, teacherName) {
+        // attendanceId may be null if no record exists
+        document.getElementById('studentModalAttendanceId').value = attendanceId || '';
+        document.getElementById('studentModalStudentName').textContent = '{{ session.get("user_full_name") or "You" }}';
+        document.getElementById('studentModalCurrentStatus').textContent = status;
+        document.getElementById('studentModalReason').value = '';
+        document.getElementById('studentCorrectionModal').classList.remove('hidden');
+    }
+    function closeStudentCorrectionModal() { document.getElementById('studentCorrectionModal').classList.add('hidden'); }
+    async function submitStudentCorrection() {
+        const attIdRaw = document.getElementById('studentModalAttendanceId').value;
+        const attId = attIdRaw ? parseInt(attIdRaw) : null;
+        const status = document.getElementById('studentModalRequestedStatus').value;
+        const reason = document.getElementById('studentModalReason').value.trim();
+        if (!reason) { alert('Please provide a reason.'); return; }
+        const btn = document.getElementById('submitStudentCorrBtn');
+        btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+        try {
+            const r = await fetch('/student/api/corrections/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ attendance_id: attId, requested_status: status, reason: reason }) });
+            const d = await r.json();
+            if (d.success) { closeStudentCorrectionModal(); location.reload(); } else { alert(d.error || 'Failed'); }
+        } catch (e) { alert('Network error'); } finally { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-paper-plane mr-1"></i>Submit'; }
+    }
+</script>
+
 </div>
 {% endblock %}

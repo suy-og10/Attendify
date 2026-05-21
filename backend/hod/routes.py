@@ -869,40 +869,12 @@ def low_attendance_report():
 @role_required('HOD')
 def attendance_corrections():
     hod_dept_id = _hod_dept_id()
-    if request.method == 'POST':
-        attendance_id = request.form.get('attendance_id', type=int)
-        requested_status = request.form.get('requested_status')
-        reason = request.form.get('reason', '').strip()
-        record = query_db(
-            """
-            SELECT ar.attendance_id
-            FROM attendance_records ar
-            JOIN class_sessions csess ON ar.session_id = csess.session_id
-            JOIN class_schedules sch ON csess.schedule_id = sch.schedule_id
-            JOIN subjects sub ON sch.subject_id = sub.subject_id
-            WHERE ar.attendance_id = %s AND sub.dept_id = %s
-            """,
-            (attendance_id, hod_dept_id),
-            one=True,
-        )
-        if not record:
-            flash('Attendance record not found in your department.', 'error')
-        elif requested_status not in ['Present', 'Absent', 'Late']:
-            flash('Invalid requested status.', 'error')
-        elif not reason:
-            flash('Reason is required.', 'error')
-        else:
-            request_id = execute_db(
-                """
-                INSERT INTO attendance_correction_requests
-                    (attendance_id, requested_status, reason, requested_by, status)
-                VALUES (%s, %s, %s, %s, 'PENDING')
-                """,
-                (attendance_id, requested_status, reason, session.get('user_id')),
-            )
-            _log_hod_action('REQUEST_ATTENDANCE_CORRECTION', 'attendance_correction_requests', request_id, reason)
-            flash('Correction request created.', 'success')
-            return redirect(url_for('.attendance_corrections'))
+    # NOTE: Correction requests must be created by Teachers from their
+    # attendance/session views. HODs/Coordinators should only review and
+    # approve/reject requests here. The creation flow is implemented in
+    # the teacher routes (`/teacher/api/corrections/submit`) and the UI
+    # in the teacher attendance view. This endpoint will therefore only
+    # render existing requests and records for review.
 
     requests = query_db(
         """
@@ -972,16 +944,21 @@ def review_attendance_correction(request_id, action):
         return redirect(url_for('.attendance_corrections'))
 
     if action == 'approve':
+        final_status = request.form.get('final_status', '') if request.form else ''
+        final_status = final_status.strip() if isinstance(final_status, str) else ''
+        allowed = ('Present', 'Absent', 'Late', 'Not Considered')
+        status_to_set = final_status if final_status in allowed and final_status else correction['requested_status']
+        verification_method = 'NOT_CONSIDERED' if status_to_set == 'Not Considered' else 'MANUAL'
         execute_db(
             """
             UPDATE attendance_records
-            SET status = %s, verification_method = 'MANUAL', marked_by = %s, notes = %s, marked_time = CURRENT_TIMESTAMP
+            SET status = %s, verification_method = %s, marked_by = %s, notes = %s, marked_time = CURRENT_TIMESTAMP
             WHERE attendance_id = %s
             """,
-            (correction['requested_status'], session.get('user_id'), correction['reason'], correction['attendance_id']),
+            (status_to_set, verification_method, session.get('user_id'), correction['reason'], correction['attendance_id']),
         )
         new_status = 'APPROVED'
-        flash('Correction approved and attendance updated.', 'success')
+        flash(f'Correction approved and attendance updated to {status_to_set}.', 'success')
     else:
         new_status = 'REJECTED'
         flash('Correction rejected.', 'success')
