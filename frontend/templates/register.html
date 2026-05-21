@@ -21,7 +21,7 @@
 {% block content %}
 <div class="login-bg"></div>
 <div class="flex items-center justify-center min-h-[calc(100vh-100px)] py-8">
-    <div class="w-full max-w-lg glass-card rounded-2xl shadow-2xl p-10" style="animation: fadeInUp 0.5s ease both;">
+<div class="w-full max-w-3xl glass-card rounded-2xl shadow-2xl p-10" style="animation: fadeInUp 0.5s ease both;">
 
         <!-- Header -->
         <div class="text-center mb-8">
@@ -40,88 +40,88 @@
             <span>Your account will be reviewed and approved by an Administrator or ERP Coordinator before you can log in.</span>
         </div>
 
-        <form method="POST" class="space-y-4">
-            <!-- Full Name -->
-            <div>
-                <label for="full_name" class="block text-sm font-semibold text-gray-700 mb-1.5">Full Name</label>
-                <div class="input-wrapper">
-                    <i class="fa-solid fa-id-card input-icon"></i>
-                    <input type="text" id="full_name" name="full_name" required class="input-field"
-                        placeholder="Dr. Jane Smith">
+        <form method="POST" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Full Name -->
+                <div>
+                    <label for="full_name" class="block text-sm font-semibold text-gray-700 mb-1.5">Full Name</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-id-card input-icon"></i>
+                        <input type="text" id="full_name" name="full_name" required class="input-field"
+                            placeholder="Dr. Jane Smith">
+                    </div>
                 </div>
-            </div>
-            <!-- Email -->
-            <div>
-                <label for="email" class="block text-sm font-semibold text-gray-700 mb-1.5">Email Address</label>
-                <div class="input-wrapper">
-                    <i class="fa-solid fa-envelope input-icon"></i>
-                    <input type="email" id="email" name="email" class="input-field" placeholder="you@college.edu">
+                <!-- Email -->
+                <div>
+                    <label for="email" class="block text-sm font-semibold text-gray-700 mb-1.5">Email Address</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-envelope input-icon"></i>
+                        <input type="email" id="email" name="email" class="input-field" placeholder="you@college.edu">
+                    </div>
                 </div>
-            </div>
-            <!-- Role -->
-            <div>
-                <label for="role" class="block text-sm font-semibold text-gray-700 mb-1.5">Role</label>
-                <div class="input-wrapper">
-                    <i class="fa-solid fa-user-tag input-icon"></i>
-                    <select id="role" name="role" required class="input-field">
-                        <option value="HOD">ERP Coordinator</option>
-                        <option value="Teacher">Teacher</option>
-                    </select>
+                <!-- Role -->
+                <div>
+                    <label for="role" class="block text-sm font-semibold text-gray-700 mb-1.5">Role</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-user-tag input-icon"></i>
+                        <select id="role" name="role" required class="input-field">
+                            <option value="HOD">ERP Coordinator</option>
+                            <option value="Teacher">Teacher</option>
+                        </select>
+                    </div>
                 </div>
-            </div>
-            <!-- Department -->
-            <div>
-                <label for="dept_id" class="block text-sm font-semibold text-gray-700 mb-1.5">Department</label>
-                <div class="input-wrapper">
-                    <i class="fa-solid fa-building input-icon"></i>
-                    <select id="dept_id" name="dept_id" class="input-field">
-                        <option value="">Select a Department...</option>
-                        {% for dept in departments %}
-                        <option value="{{ dept.dept_id }}">{{ dept.dept_name }}</option>
-                        {% endfor %}
-                    </select>
+                <!-- Department -->
+                <div>
+                    <label for="dept_id" class="block text-sm font-semibold text-gray-700 mb-1.5">Department</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-building input-icon"></i>
+                        <select id="dept_id" name="dept_id" class="input-field">
+                            <option value="">Select a Department...</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept.dept_id }}">{{ dept.dept_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Required for Teachers.</p>
                 </div>
-                <p class="text-xs text-gray-500 mt-1">Required for Teachers.</p>
-            </div>
-            <!-- Username -->
-            <div>
-                <label for="username" class="block text-sm font-semibold text-gray-700 mb-1.5">Username</label>
-                <div class="input-wrapper">
-                    <i class="fa-solid fa-at input-icon"></i>
-                    <input type="text" id="username" name="username" required class="input-field"
-                        placeholder="Choose a username">
+                <!-- Username -->
+                <div class="md:col-span-2">
+                    <label for="username" class="block text-sm font-semibold text-gray-700 mb-1.5">Username</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-at input-icon"></i>
+                        <input type="text" id="username" name="username" required class="input-field"
+                            placeholder="Choose a username">
+                    </div>
                 </div>
-            </div>
-            <!-- Password -->
-            <div>
-                <label for="password" class="block text-sm font-semibold text-gray-700 mb-1.5">Password</label>
-                <div class="input-wrapper">
-                    <i class="fa-solid fa-lock input-icon"></i>
-                    <input type="password" id="password" name="password" required class="input-field"
-                        placeholder="At least 8 characters">
+                <!-- Password -->
+                <div>
+                    <label for="password" class="block text-sm font-semibold text-gray-700 mb-1.5">Password</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input type="password" id="password" name="password" required class="input-field"
+                            placeholder="At least 8 characters">
+                    </div>
                 </div>
-            </div>
-            <!-- Confirm Password -->
-            <div>
-                <label for="confirm_password" class="block text-sm font-semibold text-gray-700 mb-1.5">Confirm
-                    Password</label>
-                <div class="input-wrapper">
-                    <i class="fa-solid fa-lock input-icon"></i>
-                    <input type="password" id="confirm_password" name="confirm_password" required class="input-field"
-                        placeholder="Re-enter your password">
+                <!-- Confirm Password -->
+                <div>
+                    <label for="confirm_password" class="block text-sm font-semibold text-gray-700 mb-1.5">Confirm Password</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input type="password" id="confirm_password" name="confirm_password" required class="input-field"
+                            placeholder="Re-enter your password">
+                    </div>
                 </div>
             </div>
 
-            <div class="pt-2">
-                <button type="submit" class="btn-success w-full py-3 text-base">
-                    <i class="fa-solid fa-user-check mr-2"></i>Create Account
+            <div class="pt-4">
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-xl shadow-lg shadow-indigo-200 transition-all hover:-translate-y-0.5 text-base flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-user-check"></i> Create Account
                 </button>
             </div>
 
-            <p class="text-center text-sm text-gray-500 mt-2">
+            <p class="text-center text-sm text-gray-500 mt-4">
                 Already registered?
-                <a href="{{ url_for('auth.login') }}" class="text-indigo-600 hover:text-indigo-800 font-semibold">Log in
-                    here</a>
+                <a href="{{ url_for('auth.login') }}" class="text-indigo-600 hover:text-indigo-800 font-bold transition-colors">Log in here</a>
             </p>
         </form>
     </div>

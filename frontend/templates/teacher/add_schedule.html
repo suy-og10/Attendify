@@ -65,10 +65,14 @@
                     <label for="academic_year" class="block text-xs font-bold text-gray-700 uppercase tracking-wider">Year / Class</label>
                     <div class="relative">
                         <i class="fa-solid fa-graduation-cap absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                        <input type="text" id="academic_year" name="academic_year" required
-                            value="{{ form_data.get('academic_year', '') }}" maxlength="10"
-                            placeholder="e.g., SE"
-                            class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-sm font-medium">
+                        <select id="academic_year" name="academic_year" required
+                            class="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all appearance-none text-sm font-medium">
+                            <option value="">Select Year</option>
+                            <option value="FE" {% if form_data.get('academic_year') == 'FE' %}selected{% endif %}>First Year (FE)</option>
+                            <option value="SE" {% if form_data.get('academic_year') == 'SE' %}selected{% endif %}>Second Year (SE)</option>
+                            <option value="TE" {% if form_data.get('academic_year') == 'TE' %}selected{% endif %}>Third Year (TE)</option>
+                            <option value="BE" {% if form_data.get('academic_year') == 'BE' %}selected{% endif %}>Final Year (BE)</option>
+                        </select>
                     </div>
                 </div>
 

@@ -60,8 +60,14 @@ def add_schedule():
     teacher_id = session.get('user_id')
     teacher_dept_id = g.user.get('dept_id')
 
-    # Fetch subjects from the Teacher's department
-    subjects = query_db("SELECT subject_id, subject_name, subject_code FROM subjects WHERE dept_id = %s AND is_active = TRUE ORDER BY subject_code", (teacher_dept_id,))
+    # Fetch subjects that this specific teacher is assigned to
+    subjects = query_db("""
+        SELECT DISTINCT s.subject_id, s.subject_name, s.subject_code 
+        FROM subjects s
+        JOIN class_schedules cs ON s.subject_id = cs.subject_id
+        WHERE cs.teacher_id = %s AND s.is_active = TRUE
+        ORDER BY s.subject_code
+    """, (teacher_id,))
     days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
     from datetime import datetime
